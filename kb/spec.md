@@ -1,0 +1,201 @@
+---
+title: Protocol Specification
+last-updated: 2026-03-23
+status: draft
+---
+
+# DAL Protocol Specification
+
+Source: `docs/protocol.md`. This file distills the protocol's mathematical content
+into the form needed to drive the Lean formalization.
+
+See also: [glossary.md](glossary.md) for term definitions; [properties.md](properties.md)
+for the invariants to prove; [architecture.md](architecture.md) for Lean locations.
+
+---
+
+## Purpose
+
+The Tezos Data Availability Layer (DAL) decouples data availability from the L1
+blockchain. Block producers publish large data blobs (slots) to the DAL instead of
+on-chain. The DAL:
+
+1. **Encodes** each slot with Reed-Solomon erasure coding.
+2. **Commits** to it with a KZG polynomial commitment (stored on L1).
+3. **Shards** the encoded slot and distributes shards to DAL nodes.
+4. **Attests** availability: if enough nodes hold valid shards, the slot is declared available.
+5. **Reconstructs**: any `k/l` valid shards suffice to recover the original slot.
+
+The formalization targets the cryptographic core: the correctness of the encode/
+commit/shard/verify pipeline.
+
+---
+
+## Parameters
+
+| Name | Type | Meaning |
+|------|------|---------|
+| `r` | prime | Order of the scalar field `𝔽_r` (BLS12-381, `r ≈ 2^255`) |
+| `slot_size` | `ℕ` | Byte length of a slot |
+| `k` | `ℕ` | Number of scalars encoding a slot (`k ≈ slot_size / 31`) |
+| `n` | `ℕ` | RS codeword length (`n = α * k`, `n | r - 1`) |
+| `α` | `ℕ` | Redundancy factor (`α ≥ 2`) |
+| `d` | `ℕ` | Degree bound of the committed polynomial (`d = k - 1`) |
+| `s` | `ℕ` | Number of shards (`s | n`) |
+| `l` | `ℕ` | Shard length in evaluations (`l = n / s`) |
+| `ω` | `𝔽_r` | Primitive `n`-th root of unity (exists since `n | r - 1`) |
+
+Constraints:
+- `d ≥ 2l` (required by the multi-reveal proof construction; see
+  `docs/protocol.md` §Multiple multi-reveals)
+- `l ∣ k` (so that `k / l` shards suffice for reconstruction; needed for S4)
+
+**Page parameters** (used for L1 verification; out of scope for the initial
+formalization but included for completeness):
+
+| Name | Type | Meaning |
+|------|------|---------|
+| `page_length` | `ℕ` | Number of scalars per page |
+| `pages_per_slot` | `ℕ` | `pages_per_slot = k / page_length` (requires `page_length ∣ k`) |
+
+---
+
+## Data flow
+
+```
+RAW BYTES (slot_size bytes)
+  │
+  │  serialize: 31 bytes → 1 scalar; pad to k scalars
+  ▼
+DATA  ∈  𝔽_r^k
+  │
+  │  interpolate on domain {1, ω^s, ω^{2s}, …, ω^{(k-1)s}} of size k
+  ▼
+POLY  p ∈ 𝔽_r[x],  deg p < k
+  │              │
+  │  commit      │  evaluate at Ω = {ω^i : i = 0, …, n-1}
+  ▼              ▼
+  C ∈ 𝔾_1     CODEWORD  ∈  𝔽_r^n
+                 │
+                 │  split into s cosets  Ω_i = ω^i · Ω_0,  |Ω_i| = l
+                 ▼
+               SHARDS  (shard_i, proof_i)_{i=0}^{s-1}
+```
+
+---
+
+## Types
+
+| Name | Lean target | Notes |
+|------|-------------|-------|
+| `N` | `ℕ` | Natural numbers |
+| `X` | `𝔽_r` | Scalar field element; evaluation point |
+| `Y` | `𝔽_r` | Evaluation value (same type as `X`) |
+| `P` | `Polynomial 𝔽_r` | Polynomial over the scalar field |
+| `C` | `G1` | KZG commitment (element of `𝔾_1`) |
+| `Π` | `G1` | KZG proof (element of `𝔾_1`) |
+| `B` | `Bool` | Verification result |
+| `⊥` | `Option` / `Except` | Failure / invalid input |
+
+---
+
+## Functions
+
+### Polynomial operations
+
+- **`deg : P → N`** — degree of a polynomial
+- **`eval : P → X → Y`** — evaluate polynomial at a point: `eval p x = p(x)`
+- **`interpolate : (Fin (d+1) → X) → (Fin (d+1) → Y) → P`** — Lagrange
+  interpolation: given `d+1` distinct points and values, returns the unique
+  polynomial of degree `≤ d` passing through them
+
+### Reed-Solomon
+
+- **`rsEncode : P → (Fin n → Y)`** — evaluate `p` at all `n` roots of unity
+  `{ω^i : i = 0, …, n-1}`: `rsEncode p i = eval p (ω^i)`
+- **`rsDecode : (Fin (d+1) → X) → (Fin (d+1) → Y) → P`** — alias for
+  `interpolate`; recovers `p` from any `d+1` evaluation point/value pairs
+
+### KZG commitment scheme
+
+- **`commit : P → C`** — `commit p = [p(τ)]_1 = Σ_i p_i · [τ^i]_1`
+- **`proveEval : P → X → Y → Π ⊕ ⊥`** — produces proof `π = [(p(x)-p(z))/(x-z)](τ)]_1`
+  when `eval p z = y`; returns `⊥` otherwise
+- **`verifyEval : X → Y → C → Π → B`** — checks `e(c - [y]_1, g_2) = e(π, [τ]_2 - [z]_2)`
+- **`proveDegree : P → N → Π ⊕ ⊥`** — produces proof that `deg p ≤ d`
+- **`verifyDegree : C → N → Π → B`** — checks `e(c, [τ^{n-d}]_2) = e(c_d, g_2)`
+
+### Sharding
+
+- **`cosetPoint : Fin s → Fin l → X`** — the `j`-th point of coset `i`:
+  `cosetPoint i j = ω^(i + s*j)` (i.e., `ω^i · (ω^s)^j`)
+- **`shardEval : P → Fin s → (Fin l → Y)`** — evaluations of `p` at coset `Ω_i`:
+  `shardEval p i j = eval p (cosetPoint i j)`
+- **`shardRemainder : P → Fin s → P`** — the remainder `r_i` of degree `< l` such
+  that `p = Z_i · q_i + r_i` (euclidean division by `Z_i`). Equivalently, `r_i` is
+  the unique polynomial of degree `< l` agreeing with `p` on `Ω_i`.
+- **`proveShardEval : P → Fin s → Π`** — multi-reveal proof for coset `Ω_i`:
+  `π_i = [q_i(τ)]_1` where `q_i = (p - shardRemainder p i) / Z_i`
+- **`verifyShardEval : C → Fin s → (Fin l → Y) → Π → B`** — checks
+  `e(c - [r_i(τ)]_1, g_2) = e(π_i, [τ^l]_2 - [ω^{il}]_2)`
+  where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`
+
+---
+
+## Specifications (axioms of the KZG scheme)
+
+These are the mathematical properties that the KZG construction satisfies. They are
+**axioms** in the Lean formalization — asserted without proof because KZG security
+rests on computational hardness assumptions, not pure mathematics. See
+[decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
+1. **(Eval soundness)** `verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
+2. **(Eval completeness)** `proveEval p x y = some π ↔ eval p x = y`
+   *(Note: `docs/protocol.md` Spec 2 writes the arguments as `proveEval(x,y,p)`,
+   reversing the polynomial to last position. This KB standardizes to polynomial-first
+   `(p, x, y)` to match the function signature in the Functions section.)*
+3. **(Degree soundness)** `verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
+4. **(Interpolation correctness)** `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
+5. **(Polynomial uniqueness)** `deg p ≤ d → deg p̃ ≤ d → (∀ i, eval p (xs i) = eval p̃ (xs i)) → p = p̃`
+6. **(Commitment binding — computational)** `commit p = commit p̃ → p = p̃`
+   ⚠ Technically false in pure math; true under the `d`-strong Diffie-Hellman
+   assumption. Formalized as an axiom. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
+---
+
+## Properties (theorems to prove)
+
+These are the top-level correctness statements derived from the axioms above. They
+are **theorems**, not axioms — proofs exist and are given in `docs/protocol.md`.
+See [properties.md](properties.md) for the complete list and proof status.
+
+### Property 1: RS decoding succeeds
+
+Given a commitment `c`, `d+1` distinct evaluation points `x_0, …, x_d`, their
+alleged evaluations `y_0, …, y_d`, corresponding evaluation proofs `π_0, …, π_d`,
+and a degree proof `π`:
+
+```
+(∀ i ∈ [0,d], verifyEval(x_i, y_i, c, π_i) = 1)
+∧ verifyDegree(c, d, π) = 1
+⟹
+∃! p,  commit(p) = c
+     ∧ (∀ i, π_i = proveEval(p, x_i, y_i))
+     ∧ interpolate((x_0,…,x_d), (y_0,…,y_d)) = p
+```
+
+### Property 2: Page verification uniqueness
+
+Given a commitment `c`, `d+1` evaluation points and proofs:
+
+```
+(∀ i ∈ [0,d], verifyEval(x_i, y_i, c, π_i) = 1)
+⟹
+∃! p,  commit(p) = c
+     ∧ (∀ i, π_i = proveEval(p, x_i, y_i))
+```
+
+**Proof sketch (from `docs/protocol.md`):**
+Apply Spec 1 for each `i` (eval soundness). Apply Spec 6 (binding) for uniqueness.
+Prop 1 additionally uses Spec 3 (degree soundness), Spec 4 (interpolation), and
+Spec 2 + 5 to conclude `interpolate(...) = p`.
