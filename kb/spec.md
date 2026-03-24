@@ -140,6 +140,22 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
   `e(c - [r_i(τ)]_1, g_2) = e(π_i, [τ^l]_2 - [ω^{il}]_2)`
   where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`
 
+### S4 helper functions
+
+These helpers appear in the statement of S4 (shard recovery) in `kb/properties.md`
+and must be defined before `Dal/Sharding.lean` is written.
+
+- **`cosetPoints : Finset (Fin s) → Fin (k / l * l) → X`** — given an index set
+  `I` with `|I| = k / l`, enumerates (in a fixed order) all `cosetPoint i j` for
+  `i ∈ I`, `j : Fin l`. Requires `l ∣ k` so that `k / l * l = k`.
+- **`shardVals : Finset (Fin s) → (Fin s → Fin l → Y) → Fin (k / l * l) → Y`** —
+  collects the corresponding evaluation values in the same order as `cosetPoints`.
+  `shardVals I vs m = vs (I.enum m).1 (I.enum m).2` (for some fixed enumeration).
+
+The exact enumeration order is a Lean implementation choice; any fixed total order
+on `(i, j)` pairs satisfying `i ∈ I`, `j : Fin l` is acceptable, provided
+`cosetPoints` and `shardVals` use the same order.
+
 ---
 
 ## Specifications

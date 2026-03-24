@@ -37,3 +37,4 @@ When creating a new decision:
 |------|--------|----------|
 | [001-kzg-axioms.md](001-kzg-axioms.md) | `implemented` | KZG security properties A1, A3, A6 are `axiom`; A4 and A5 are theorems to be proved |
 | [002-kzg-over-poly.md](002-kzg-over-poly.md) | `implemented` | KZG functions operate on `Polynomial 𝔽_r`, not raw bytes |
+| [003-field-parameters-as-axioms.md](003-field-parameters-as-axioms.md) | `implemented` | All deployment parameters are `axiom` declarations in `Dal/Field.lean` |

@@ -5,29 +5,33 @@ import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 /-!
 # Dal.Field
 
-Scalar field `𝔽_r` and primitive `n`-th root of unity `ω` for the DAL formalization.
+Scalar field `𝔽_r`, all deployment parameters, and the primitive `n`-th root of
+unity `ω` for the DAL formalization.
 
 ## Design
 
-`𝔽_r` is modelled as `ZMod r` for the BLS12-381 scalar field prime `r`.
+All global DAL deployment parameters are declared as `axiom` here so that every
+downstream module (`Poly`, `KZG`, `Sharding`, …) can refer to them by name after a
+single `import Dal.Field`.  See `decisions/003-field-parameters-as-axioms.md`.
 
-The primitive `n`-th root of unity `ω` exists in `𝔽_r` whenever `n ∣ r - 1`
-(because `(ZMod r)ˣ` is cyclic of order `r - 1`).  We expose `ω` as an axiom with
-its characterizing property `IsPrimitiveRoot ω n`.  This matches the treatment of
-the KZG constants in `Dal/KZG.lean` (see `decisions/001-kzg-axioms.md`): cryptographic
-and setup constants are axiomatized rather than constructed.
+`𝔽_r` is modelled as `ZMod r`.  `ω` is axiomatized via `IsPrimitiveRoot ω n`,
+consistent with the treatment of KZG constants (see `decisions/001-kzg-axioms.md`).
 
-Downstream modules import this file and use `Dal.Field.Fr`, `Dal.Field.ω`, and
-`Dal.Field.ω_isPrimitiveRoot`.
+## Parameters exposed by this module
+
+- `r`, `r_prime`                          — scalar field prime
+- `k`, `n`, `s`, `l`, `α`, `slot_size`   — RS / sharding dimensions
+- `d`                                     — degree bound (`d = k - 1`)
+- Constraints: `n_dvd_r_sub_one`, `s_dvd_n`, `alpha_eq`, `d_eq`, `l_eq`,
+  `alpha_ge_two`, `d_ge_2l`, `l_dvd_k`
+- `ω`, `ω_isPrimitiveRoot`                — primitive root of unity
 -/
 
 namespace Dal.Field
 
 /-! ### Deployment parameters
 
-These are declared as Lean `axiom`s rather than `variable`s so that downstream
-modules can refer to the concrete names `Dal.Field.r`, `Dal.Field.n`, etc. without
-threading them explicitly through every function signature.
+All declared as `axiom` (see `decisions/003-field-parameters-as-axioms.md`).
 -/
 
 /-- BLS12-381 scalar field prime order. -/
@@ -38,16 +42,66 @@ axiom r_prime : Nat.Prime r
 
 instance : Fact (Nat.Prime r) := ⟨r_prime⟩
 
-/-- RS codeword length (`n = α · k`, `α ≥ 2`). -/
+/-- Number of scalars encoding a slot (`k ≈ slot_size / 31`). -/
+axiom k : ℕ
+
+/-- RS codeword length (`n = α · k`). -/
 axiom n : ℕ
 
-/-- The codeword length is positive. -/
-axiom n_pos : 0 < n
+/-- Number of shards. -/
+axiom s : ℕ
 
-/-- `n` divides `r - 1`, which is the order of the multiplicative group `𝔽_r*`.
-    This is the necessary and sufficient condition for a primitive `n`-th root of
+/-- Shard length in evaluations (`l = n / s`). -/
+axiom l : ℕ
+
+/-- Redundancy factor (`α = n / k`). -/
+axiom α : ℕ
+
+/-- Byte size of a slot. -/
+axiom slot_size : ℕ
+
+/-- Degree bound of the committed polynomial (`d = k - 1`). -/
+axiom d : ℕ
+
+/-! ### Parameter constraints -/
+
+/-- `n` divides `r - 1`: necessary and sufficient for a primitive `n`-th root of
     unity to exist in `𝔽_r`. -/
 axiom n_dvd_r_sub_one : n ∣ r - 1
+
+/-- `s` divides `n`: required so that cosets partition the evaluation domain evenly. -/
+axiom s_dvd_n : s ∣ n
+
+/-- `α = n / k`: redundancy factor definition. -/
+axiom alpha_eq : α = n / k
+
+/-- `d = k - 1`: degree bound is one less than the message length. -/
+axiom d_eq : d = k - 1
+
+/-- `l = n / s`: shard length definition. -/
+axiom l_eq : l = n / s
+
+/-- `α ≥ 2`: minimum redundancy for MDS recovery. -/
+axiom alpha_ge_two : 2 ≤ α
+
+/-- `d ≥ 2 * l`: required by the multi-reveal proof construction. -/
+axiom d_ge_2l : 2 * l ≤ d
+
+/-- `l ∣ k`: ensures `k / l` is exact, needed for S4 (shard recovery). -/
+axiom l_dvd_k : l ∣ k
+
+/-- `k` is positive (follows from `slot_size > 0` and serialization, but axiomatized
+    here for convenience). -/
+axiom k_pos : 0 < k
+
+/-- `n` is positive (follows from `n = α * k ≥ 2 * 1`). -/
+axiom n_pos : 0 < n
+
+/-- `s` is positive. -/
+axiom s_pos : 0 < s
+
+/-- `l` is positive. -/
+axiom l_pos : 0 < l
 
 /-! ### Scalar field -/
 
