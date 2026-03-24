@@ -1,59 +1,95 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-24
-run: 8
-status: 1 warning, 1 info
+run: 9
+status: 3 warnings, 1 info
 ---
 
 # Spec Compliance Report
 
 ## Changes since last run
 
-Two issues from run 7 are now resolved:
+One resolved issue from run 8:
 
-- **V1 resolved**: `kb/spec.md` § Parameters, Constraints has been updated to
-  replace `slot_size = k * 31` with `slot_size ≤ k * 31`, including a prose note
-  about the real Tezos deployment values (`slot_size = 380832`, `k = 12285`, last
-  chunk is 28 bytes). The spec and `Dal/Serialization.lean` are now in agreement
-  on this foundational constraint.
-- **W1 resolved**: `kb/architecture.md` § Dal/Sharding.lean now uses `shardEval`
-  (not `shard`), matching the Lean identifier `Dal.Sharding.shardEval`. The stale
-  `shard : Poly → Fin s → Fin l → 𝔽_r` wording has been removed.
+- **W1 resolved** (from run 8): `kb/gaps.md` G7 note still referenced the stale axiom
+  name `slot_size_eq`; that stale reference is tracked as a carried-forward item by
+  the harness-validator — it is not re-raised as a new finding here.
 
-One new warning identified (W1) concerning a stale name in `gaps.md`. One info
-item carried forward (I1).
+Three new issues identified due to the addition of `Dal/ReedSolomon.lean`:
+
+- **[W1] NEW** — `shard_recovery` is proved in `Dal.ReedSolomon` but
+  `kb/properties.md` lists its Lean target as `Dal.Protocol.shard_recovery`.
+- **[W2] NEW** — `kb/architecture.md` "Current state" does not list
+  `Dal/ReedSolomon.lean` as implemented.
+- **[W3] NEW** — `kb/spec.md` § S4 helper functions specifies `cosetPoints` with
+  domain `Fin (k / l * l)`, but the Lean implementation uses `Fin (d + 1)`.
+- **[I1]** carried forward from run 8: P1 and P2 still `not started`.
 
 ---
 
 ## Warnings
 
-### [W1] `gaps.md` G7 note references stale axiom name `slot_size_eq`
+### [W1] `shard_recovery` namespace: `Dal.ReedSolomon` vs `Dal.Protocol`
 
-- **KB location**: `kb/gaps.md` § G7: Serialization injectivity, Note:
-  "Two supporting axioms added: `slot_size_eq : slot_size = k * 31` and
-  `bytes31_lt_r : 256^31 < r`."
-- **Lean location**: `dal/Dal/Serialization.lean` lines 54–59: the axiom is
-  `slot_size_le : slot_size ≤ k * 31`; `slot_size_eq` does not exist.
-- **Issue**: The G7 note was not updated when the axiom was renamed and weakened.
-  An agent consulting `gaps.md` to understand the serialization axioms would find
-  a name (`slot_size_eq`) that does not exist in the codebase and an incorrect
-  constraint (equality instead of inequality).
-- **Action required**: Update `kb/gaps.md` G7 note to read:
-  "Two supporting axioms added: `slot_size_le : slot_size ≤ k * 31` and
-  `bytes31_lt_r : 256^31 < r`."
+- **KB location**: `kb/properties.md` § S4: Shard recovery (MDS property), Lean
+  target field: `Dal.Protocol.shard_recovery`; status field: `not started`
+- **Lean location**: `dal/Dal/ReedSolomon.lean` lines 144–161:
+  `theorem shard_recovery` in `namespace Dal.ReedSolomon`
+- **Issue**: `properties.md` lists the target namespace as `Dal.Protocol`, implying
+  `shard_recovery` belongs in `Dal/Protocol.lean`. The actual theorem lives in
+  `Dal.ReedSolomon`. The KB status `not started` is also wrong — the theorem is
+  fully proved.
+- **Impact**: An agent consulting `properties.md` would conclude S4 is unproved and
+  would attempt to write it again in `Dal/Protocol.lean`, creating a duplicate.
+- **Action required**: Update `kb/properties.md` S4 entry:
+  - Change Lean target to `Dal.ReedSolomon.shard_recovery`
+  - Change status to `proved`
+
+### [W2] `kb/architecture.md` "Current state" does not include `Dal/ReedSolomon.lean`
+
+- **KB location**: `kb/architecture.md` § Current state, first paragraph:
+  "`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`, and
+  `Dal/Serialization.lean` are implemented and build clean. All other modules are
+  unstarted."
+- **Lean location**: `dal/Dal/ReedSolomon.lean` — file exists and is complete.
+  `dal/Dal.lean` line 6: `import Dal.ReedSolomon`.
+- **Issue**: The "Current state" paragraph does not mention `Dal/ReedSolomon.lean`,
+  and "All other modules are unstarted" is now false.
+- **Action required**: Update the "Current state" sentence to include
+  `Dal/ReedSolomon.lean` in the list of implemented modules, and add an
+  `### Implementation notes for Dal/ReedSolomon.lean` section documenting the
+  key design choices (`d_succ_eq_k`, `kl_eq_d_succ`, `cosetPoints` using
+  `Finset.orderIsoOfFin`, proof strategy for `cosetPoints_injective` via
+  `cosets_disjoint` and `ω_pow_inj`).
+
+### [W3] `cosetPoints` domain type: spec says `Fin (k / l * l)`, Lean uses `Fin (d + 1)`
+
+- **KB location**: `kb/spec.md` § S4 helper functions:
+  "`cosetPoints : Finset (Fin s) → Fin (k / l * l) → X`"
+- **Lean location**: `dal/Dal/ReedSolomon.lean` line 68:
+  `noncomputable def cosetPoints (I : Finset (Fin s)) (hI : I.card = k / l) (m : Fin (d + 1)) : Fr`
+- **Analysis**: The Lean file uses `Fin (d + 1)` as the domain index type rather
+  than `Fin (k / l * l)`. These are propositionally equal by the lemma
+  `kl_eq_d_succ : k / l * l = d + 1` (proved on line 45–46 of ReedSolomon.lean),
+  so the two types are definitionally distinct but mathematically equivalent.
+  The choice to use `Fin (d + 1)` is deliberate (noted in `Dal.Poly.interpolate`
+  which uses `Fin (d+1)`), but the spec text uses a different expression.
+- **Impact**: Low — the difference is cosmetic and mathematically trivial. However,
+  an agent generating code from the spec signature would produce a type mismatch.
+- **Action required**: Update `kb/spec.md` § S4 helper functions to use `Fin (d + 1)`
+  as the domain (or add a note that `k / l * l = d + 1` and `Fin (d + 1)` is
+  the Lean implementation choice), and do the same for `shardVals`.
 
 ---
 
 ## Info
 
-### [I1] P1, P2, S4 still `not started`; all other properties resolved
+### [I1] P1, P2 still `not started`; all other properties resolved or proved
 
 - **KB location**: `kb/properties.md`
-- **Lean location**: missing (`Dal/Protocol.lean` and `Dal/ReedSolomon.lean` not
-  yet written)
-- **Status**: Expected at this stage. P1, P2, and S4 require modules not yet
-  implemented. S1 (`serialize_injective`) and all A-series and S2/S3 properties
-  are resolved.
+- **Lean location**: missing (`Dal/Protocol.lean` not yet written)
+- **Status**: Expected at this stage. S4 is now proved (in `Dal.ReedSolomon`).
+  P1 and P2 require `Dal/Protocol.lean`.
 
 ---
 
@@ -91,13 +127,13 @@ item carried forward (I1).
 | `256^31 < r` constraint | spec.md § Parameters | `Dal.Serialization.bytes31_lt_r` | axiom |
 | `serialize` function | spec.md § Data flow | `Dal.Serialization.serialize` | proved |
 | S1: Serialization injectivity | properties.md | `Dal.Serialization.serialize_injective` | proved |
+| `rsEncode` function | spec.md § Reed-Solomon | `Dal.ReedSolomon.rsEncode` | proved |
+| `cosetPoints` helper | spec.md § S4 helpers | `Dal.ReedSolomon.cosetPoints` | proved (see W3 re: domain type) |
+| `shardVals` helper | spec.md § S4 helpers | `Dal.ReedSolomon.shardVals` | proved (see W3 re: domain type) |
+| S4: Shard recovery (MDS) | properties.md | `Dal.ReedSolomon.shard_recovery` | proved (see W1 re: namespace) |
 | `shardRemainder` function | spec.md § Sharding | missing | not started |
 | `proveShardEval` function | spec.md § Sharding | missing | not started |
 | `verifyShardEval` function | spec.md § Sharding | missing | not started |
-| `cosetPoints` helper | spec.md § S4 helpers | missing | not started |
-| `shardVals` helper | spec.md § S4 helpers | missing | not started |
-| `rsEncode` function | spec.md § Reed-Solomon | missing | not started |
 | `rsDecode` function | spec.md § Reed-Solomon | missing | not started |
 | P1: RS decoding succeeds | properties.md | missing | not started |
 | P2: Page verification uniqueness | properties.md | missing | not started |
-| S4: Shard recovery (MDS) | properties.md | missing | not started |

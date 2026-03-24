@@ -16,9 +16,9 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`, and
-`Dal/Serialization.lean` are implemented and build clean. All other modules are
-unstarted. See [gaps.md](gaps.md) for status.
+`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
+`Dal/Serialization.lean`, and `Dal/ReedSolomon.lean` are implemented and build clean.
+All other modules are unstarted. See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Serialization.lean`
 
@@ -31,6 +31,20 @@ unstarted. See [gaps.md](gaps.md) for status.
 - **`reindex` step in `serialize_injective`**: uses `show` to expose the concrete `byteAt`
   form (since `byteChunk` is definitionally `byteAt`), then `congr_arg (byteAt b)` with
   an `omega` proof that `31 * (m / 31) + m % 31 = m`.
+
+### Implementation notes for `Dal/ReedSolomon.lean`
+
+- **`Fin (d+1)` not `Fin (k/l*l)`**: `cosetPoints` and `shardVals` have domain `Fin (d+1)`,
+  not `Fin (k/l*l)` as written in `kb/spec.md`. They are equal (via `kl_eq_d_succ`), but
+  `Fin (d+1)` matches `Dal.Poly.interpolate`'s argument type directly.
+- **Enumeration order**: point `m : Fin (d+1)` maps to coset `I[⌊m/l⌋]` (sorted by
+  `Finset.orderIsoOfFin`) at position `m % l`. The bound `m/l < k/l` is proved via
+  `Nat.div_lt_iff_lt_mul` since omega cannot handle `a < b*c → a/b < c` directly.
+- **`cosetPoints_injective` proof structure**: `by_cases (e ia1).val = (e ia2).val`;
+  same-coset branch uses `ω_pow_inj` + `Nat.eq_of_mul_eq_mul_left s_pos` + Euclidean
+  division uniqueness via `Nat.div_add_mod` + `linarith`; cross-coset branch uses
+  `cosets_disjoint`.
+- **`Equiv.injective` for `orderIsoOfFin`**: accessed as `(I.orderIsoOfFin hI).toEquiv.injective`.
 
 ### Implementation notes for `Dal/Field.lean`
 
@@ -117,9 +131,11 @@ dal/
 
 ### `Dal/ReedSolomon.lean`
 - Defines `rsEncode : Poly → Fin n → 𝔽_r` as evaluation at `ω^i`.
-- Defines the `k/l` shard recovery condition: any `k` evaluations determine `p`.
-- States S4 (shard recovery / MDS property).
-- References: `Field.lean`, `Poly.lean`.
+- Defines `cosetPoints` and `shardVals` as `Fin (d+1) → 𝔽_r` (using `Finset.orderIsoOfFin`
+  to enumerate the index set `I` and Euclidean division to split `m` into coset/position).
+- Proves `cosetPoints_injective` (distinctness of the `d+1` evaluation points) and
+  `shard_recovery` (S4) via `poly_unique_of_eval` (A5).
+- References: `Field.lean`, `Poly.lean`, `Sharding.lean`.
 
 ### `Dal/KZG.lean`
 - Declares opaque types `G1`, `G2`, `GT` for BLS12-381 groups.

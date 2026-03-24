@@ -1,32 +1,34 @@
 ---
 auditor: harness-validator
 date: 2026-03-24
-run: 9
-status: pass (1 warning, 2 info)
+run: 10
+status: pass (3 warnings, 3 info)
 ---
 
 # Harness Validation Report
 
 ## Changes since last run
 
-Four issues from run 8 are now resolved:
+One item resolved from run 9:
 
-- **W2 resolved**: `kb/architecture.md` § Dal/Sharding.lean now uses `shardEval`
-  (not `shard`) and `cosetPoint` (not `coset_point`), matching the Lean identifiers.
-- **W3 resolved**: `kb/spec.md` § Parameters, Constraints now states both
-  `slot_size ≤ k * 31` and `256^31 < r` explicitly. `kb/architecture.md`
-  § Dal/Serialization.lean names both axioms (`slot_size_le`, `bytes31_lt_r`).
-- **W4 resolved**: `kb/architecture.md` "Current state" sentence now lists
-  `Dal/Serialization.lean` as implemented.
-- **Gap tracking**: `kb/gaps.md` G1 "Next task" updated to `Dal/ReedSolomon.lean`;
-  G7 status is `resolved`; `kb/properties.md` S1 status is `proved`.
+- **W1 resolved** (from run 9): `kb/gaps.md` G7 note referenced the stale axiom
+  name `slot_size_eq`. This has been corrected — the G7 note now reads
+  `slot_size_le : slot_size ≤ k * 31`.
 
-One warning remains (W1, carried from run 8). Two info items carried from
-ambiguity-report run 10 (I2, I3 below).
+  Re-reading `kb/gaps.md`: line 112–116 reads "Two supporting axioms added:
+  `slot_size_le : slot_size ≤ k * 31` (generalized from the earlier equality …)
+  and `bytes31_lt_r : 256^31 < r`." W1 is **resolved**.
 
-One new finding: `kb/gaps.md` G7 note still references the stale axiom name
-`slot_size_eq` (renamed `slot_size_le`) — picked up from spec-compliance-report run 8
-W1; tracked here as W1.
+Three new warnings and one new info item are raised due to the addition of
+`Dal/ReedSolomon.lean`:
+
+- **[W1] NEW** — `kb/architecture.md` "Current state" does not include `Dal/ReedSolomon.lean`.
+- **[W2] NEW** — `kb/properties.md` S4 entry lists wrong Lean target and wrong status.
+- **[W3] NEW** — `kb/gaps.md` G1 "Next task" pointer is stale.
+- **[I1] NEW** — `Dal.lean` now imports `Dal.ReedSolomon` but the import is not
+  reflected in architecture.md.
+
+Two info items carried forward from run 9 (I2, I3 below).
 
 ---
 
@@ -43,12 +45,6 @@ W1; tracked here as W1.
 
 - [x] All KB files have `title`, `last-updated`, `status` fields
 - [x] All KB frontmatter `status` values are valid (`draft` or `implemented`)
-- [ ] **[W1] `kb/gaps.md` G7 note references stale axiom name `slot_size_eq`**:
-  The G7 note reads "Two supporting axioms added: `slot_size_eq : slot_size = k * 31`
-  and `bytes31_lt_r`…" but the axiom in `Dal/Serialization.lean` is
-  `slot_size_le : slot_size ≤ k * 31` (inequality, not equality).
-  **Recommendation**: Update the G7 note in `kb/gaps.md` to replace `slot_size_eq`
-  with `slot_size_le` and `slot_size = k * 31` with `slot_size ≤ k * 31`.
 
 ## Auditor Coverage
 
@@ -97,51 +93,61 @@ W1; tracked here as W1.
 
 ## KB / Architecture Alignment
 
-- [x] `kb/architecture.md` "Current state" lists all 5 implemented modules:
-  `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
-  `Dal/Serialization.lean`
 - [x] `kb/architecture.md` § Dal/Sharding.lean uses `shardEval` (not `shard`)
 - [x] `kb/architecture.md` § Dal/Serialization.lean names both axioms
   `slot_size_le` and `bytes31_lt_r`
 - [x] `kb/spec.md` § Parameters Constraints lists `slot_size ≤ k * 31` and
   `256^31 < r`
+- [ ] **[W1] `kb/architecture.md` "Current state" does not include `Dal/ReedSolomon.lean`**:
+  The sentence reads "`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`,
+  `Dal/Sharding.lean`, and `Dal/Serialization.lean` are implemented and build clean.
+  All other modules are unstarted." `Dal/ReedSolomon.lean` is now implemented and
+  `Dal.lean` imports it on line 6. The "All other modules are unstarted" claim is false.
+  **Recommendation**: Update "Current state" to add `Dal/ReedSolomon.lean` to the list
+  and add an implementation notes section for it.
 
 ## Gap Tracking
 
 - [x] Zero `sorry` / `admit` occurrences in all Lean files
   (`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
-  `Dal/Serialization.lean`, `Dal.lean`)
+  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal.lean`)
 - [x] `kb/gaps.md` exists and tracks all open obligations
 - [x] `kb/properties.md` has open obligations (`not started`) clearly identified
-  for P1, P2, S4
-- [x] `kb/gaps.md` G1 "Next task" updated to `Dal/ReedSolomon.lean`
-- [x] `kb/gaps.md` G7 status is `resolved`
-- [x] `kb/properties.md` S1 status is `proved`
-- [ ] **[W1] `kb/gaps.md` G7 note uses stale axiom name `slot_size_eq`**
-  (see Missing Frontmatter section above)
+  for P1, P2
+- [ ] **[W2] `kb/properties.md` S4 entry is stale**:
+  - Lean target is `Dal.Protocol.shard_recovery` but the theorem lives at
+    `Dal.ReedSolomon.shard_recovery`.
+  - Status is `not started` but the theorem is proved without `sorry`.
+  **Recommendation**: Update S4 entry: Lean target → `Dal.ReedSolomon.shard_recovery`;
+  status → `proved`.
+- [ ] **[W3] `kb/gaps.md` G1 "Next task" pointer is stale**:
+  The "Next task" bullet reads "Implement `Dal/ReedSolomon.lean`…" but that module
+  is now complete. The next task is `Dal/Protocol.lean` (P1, P2).
+  **Recommendation**: Add `Dal/ReedSolomon.lean` to the G1 "Completed" list and
+  update "Next task" to `Dal/Protocol.lean`.
 
 ## Additional Open Items from Other Auditors
 
-- [ ] **[I2] `decisions/001-kzg-axioms.md` §"What NOT to do" omits A2**
-  (from ambiguity-report run 10 W1): The bullet reads "Do not assert additional axioms
-  beyond A1, A3, A6" but the §Consequences section of the same file states that four
-  axioms (A1, A2, A3, A6) are declared. This internal contradiction would mislead a
-  future agent.
-  **Recommendation**: Update §"What NOT to do" to read "Do not assert additional axioms
-  beyond A1, A2, A3, A6 without explicit human approval."
-
-- [ ] **[I3] `kb/glossary.md` missing entries for serialization terms**
-  (from ambiguity-report run 10 I1): `Bytes`, `slot_size_le`, `bytes31_lt_r`, and
+- [ ] **[I2] `kb/glossary.md` missing entries for serialization terms**
+  (from ambiguity-report run 11 I1): `Bytes`, `slot_size_le`, `bytes31_lt_r`, and
   `serialize` are not defined in `kb/glossary.md`; the `k` row description is also
   stale (`k ≈ slot_size / 31`).
   **Recommendation**: Add the four missing entries and update the `k` row on the next
   KB update pass. Low urgency.
 
+- [ ] **[I3] `kb/spec.md` S4 helper functions domain type uses `Fin (k / l * l)` but
+  Lean uses `Fin (d + 1)`** (from spec-compliance-report run 9 W3): The spec text
+  signatures for `cosetPoints` and `shardVals` use `Fin (k / l * l)` as the domain
+  index type; the Lean implementation uses `Fin (d + 1)` (equivalent by
+  `kl_eq_d_succ` but textually different).
+  **Recommendation**: Update `kb/spec.md` § S4 helper functions to use `Fin (d + 1)`
+  or add a note documenting the equivalence.
+
 ## `lake build` Gate
 
 - [x] `lake build` passes with zero errors and zero warnings (confirmed by
-  sorry-report run 7; no Lean files changed since that audit)
-- [x] Zero sorries across all five project `.lean` files
+  sorry-report run 8; `Dal/ReedSolomon.lean` has no `sorry` occurrences)
+- [x] Zero sorries across all seven project `.lean` files
 
 ---
 
@@ -160,11 +166,11 @@ W1; tracked here as W1.
 - [x] Zero sorries across all Lean files
 - [x] `kb/gaps.md` exists and all sorry obligations are tracked
 - [x] ADRs 001, 002, 003 — all `implemented`
-- [x] `kb/architecture.md` "Current state" includes `Dal/Serialization.lean`
 - [x] `kb/architecture.md` uses `shardEval` (not `shard`)
 - [x] `slot_size_le` and `bytes31_lt_r` axioms registered in spec.md and architecture.md
-- [x] `kb/gaps.md` G1 next-task pointer and G7 status are current
+- [x] `kb/gaps.md` G7 note uses correct axiom name `slot_size_le`
 - [x] `kb/properties.md` S1 status is `proved`
+- [x] `decisions/001-kzg-axioms.md` §"What NOT to do" includes A2
 
 ---
 
@@ -172,6 +178,9 @@ W1; tracked here as W1.
 
 | ID | Severity | Description | Action |
 |----|----------|-------------|--------|
-| W1 | Warning | `kb/gaps.md` G7 note references stale axiom name `slot_size_eq` (should be `slot_size_le`) | Update G7 note in `kb/gaps.md` |
-| I2 | Info | `decisions/001-kzg-axioms.md` §"What NOT to do" omits A2, contradicting §Consequences | Update "What NOT to do" bullet to include A2 |
-| I3 | Info | `kb/glossary.md` missing entries for `Bytes`, `slot_size_le`, `bytes31_lt_r`, `serialize`; `k` row stale | Add entries on next KB update pass |
+| W1 | Warning | `kb/architecture.md` "Current state" omits `Dal/ReedSolomon.lean` | Add module to implemented list; add implementation notes section |
+| W2 | Warning | `kb/properties.md` S4 Lean target and status are stale | Update target to `Dal.ReedSolomon.shard_recovery`; status to `proved` |
+| W3 | Warning | `kb/gaps.md` G1 "Next task" still points to `Dal/ReedSolomon.lean` | Add completed bullet for ReedSolomon; update next task to `Dal/Protocol.lean` |
+| I1 | Info | Sections of `docs/protocol.md` with no KB coverage (intentional) | No action needed; tracked in `kb/gaps.md` |
+| I2 | Info | `kb/glossary.md` missing entries for serialization terms; `k` row stale | Add entries on next KB update pass |
+| I3 | Info | `kb/spec.md` S4 helper functions domain type mismatch with Lean (`Fin (k/l*l)` vs `Fin (d+1)`) | Update spec text to use `Fin (d+1)` or add equivalence note |

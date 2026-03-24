@@ -171,7 +171,7 @@ The evaluation domain partitions into `s` disjoint cosets:
 Any `k/l` shards (i.e., evaluations at any `k/l` cosets) suffice to reconstruct
 the polynomial. Precondition: `l ∣ k` (see `kb/spec.md` Parameters constraints).
 
-Let `cosetPoints (I : Finset (Fin s)) : Fin (k/l * l) → X` collect, in order,
+Let `cosetPoints (I : Finset (Fin s)) : Fin (d+1) → X` collect, in order,
 all `cosetPoint i j` for `i ∈ I`, `j : Fin l`. Let `shardVals` collect the
 corresponding evaluations. Then:
 
@@ -182,14 +182,15 @@ corresponding evaluations. Then:
   → p = interpolate (cosetPoints I) (shardVals I vs)
 ```
 
-where `interpolate` is applied to the `k = (k/l) * l` collected evaluation
-point/value pairs.
+where `interpolate` is applied to the `k = d+1 = (k/l) * l` collected evaluation
+point/value pairs. The domain type `Fin (d+1)` (rather than `Fin (k/l*l)`) is used so
+that `cosetPoints` and `shardVals` directly match the argument type of `Dal.Poly.interpolate`.
 
-- **Lean target**: `Dal.Protocol.shard_recovery`
-- **Status**: `not started`
-- **Note**: Follows from the MDS property of Reed-Solomon codes (any `k` evaluation
-  points at distinct locations determine the degree-`< k` polynomial). Mathlib may
-  have relevant results in `Polynomial.Lagrange`.
+- **Lean target**: `Dal.ReedSolomon.shard_recovery`
+- **Status**: `proved`
+- **Proof**: Via `poly_unique_of_eval` (A5). Distinctness of the `d+1` coset points
+  uses `cosets_disjoint` (S2) for cross-coset pairs and `ω_pow_inj` for within-coset
+  pairs. See `Dal/ReedSolomon.lean`.
 
 ---
 

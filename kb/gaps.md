@@ -53,9 +53,11 @@ They must be addressed before the formalization is useful.
   `serialize`; new axioms `slot_size_le : slot_size ≤ k * 31` (generalized from equality
   to handle `slot_size = 380832`) and `bytes31_lt_r : 256^31 < r`;
   `serialize_injective` (S1). All proved without `sorry`.
-- **Next task**: Implement `Dal/ReedSolomon.lean` — `rsEncode`, shard recovery
-  condition, and S4 (MDS property). Alternatively, start `Dal/Protocol.lean`
-  which assembles P1 and P2.
+- **Completed**: `Dal/ReedSolomon.lean` — `rsEncode`, `cosetPoints`, `shardVals`,
+  `cosetPoint_mem_Ω`, `cosetPoints_injective`, `shard_recovery` (S4). All proved
+  without `sorry`.
+- **Next task**: Implement `Dal/Protocol.lean` — assemble P1 (RS decoding succeeds)
+  and P2 (page verification uniqueness) from the existing axioms A1–A6.
 
 ---
 

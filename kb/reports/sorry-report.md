@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-24
-run: 7
+run: 8
 status: clean
 ---
 
@@ -9,13 +9,13 @@ status: clean
 
 ## Changes since last run
 
-No regressions — zero sorries in run 6, zero sorries in run 7.
+One new file added since run 7: `dal/Dal/ReedSolomon.lean`. The file contains no
+`sorry` or `admit` occurrences. All proofs in `ReedSolomon.lean` — including
+`cosetPoints_injective` and `shard_recovery` — are closed without gaps.
 
-One change since run 6: `dal/Dal/Serialization.lean` has been updated. The
-`slot_size_eq` axiom (`slot_size = k * 31`) has been replaced with
-`slot_size_le` (`slot_size ≤ k * 31`), and `byteAt`/`byteChunk` now include
-zero-padding for positions beyond `slot_size`. All proofs remain complete with
-no sorries.
+The KB obligation cross-check is updated: S4 (`shard_recovery`) is now **resolved**
+in `Dal.ReedSolomon.shard_recovery` (see spec-compliance-report run 9 for the
+target-namespace discrepancy, which is a separate finding).
 
 ## Summary
 
@@ -26,6 +26,7 @@ no sorries.
 | `dal/Dal/KZG.lean` | 0 | 0 | 0 |
 | `dal/Dal/Sharding.lean` | 0 | 0 | 0 |
 | `dal/Dal/Serialization.lean` | 0 | 0 | 0 |
+| `dal/Dal/ReedSolomon.lean` | 0 | 0 | 0 |
 | `dal/Dal.lean` | 0 | 0 | 0 |
 | **Total** | **0** | **0** | **0** |
 
@@ -44,9 +45,9 @@ no sorries.
 | S2 — cosets_disjoint | `Dal.Sharding.cosets_disjoint` | **resolved** (proved) |
 | S3 — vanishing_poly_roots | `Dal.Sharding.vanishing_poly_roots` | **resolved** (proved) |
 | G7 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **resolved** (proved) |
+| S4 — shard_recovery | `Dal.ReedSolomon.shard_recovery` | **resolved** (proved; see spec-compliance W1 re: namespace) |
 | P1 — rs_decoding_succeeds | `Dal.Protocol.rs_decoding_succeeds` | **unstarted** |
 | P2 — page_verification_unique | `Dal.Protocol.page_verification_unique` | **unstarted** |
-| S4 — shard_recovery | `Dal.Protocol.shard_recovery` | **unstarted** |
 
 ## Open KB obligations with no Lean counterpart
 
@@ -56,13 +57,13 @@ simply unstarted modules.
 
 - **P1** (`Dal.Protocol.rs_decoding_succeeds`) — needs `Dal/Protocol.lean`
 - **P2** (`Dal.Protocol.page_verification_unique`) — needs `Dal/Protocol.lean`
-- **S4** (`Dal.Protocol.shard_recovery`) — needs `Dal/Protocol.lean`
 
 ## Verdict
 
-All clear. The formalization is sorry-free across all six project files.
-Next task: `Dal/Protocol.lean` (P1, P2, S4).
+All clear. The formalization is sorry-free across all seven project files.
+Next task: `Dal/Protocol.lean` (P1, P2).
 
-Note: a spec-compliance issue was detected in this run regarding
-`slot_size_le` vs `slot_size = k * 31` — see `kb/reports/spec-compliance-report.md`
-run 7 for details. The sorry audit is unaffected (no new sorry obligations).
+Note: a spec-compliance issue was detected in this run regarding the namespace of
+`shard_recovery` (`Dal.ReedSolomon` vs the KB-listed target `Dal.Protocol`) — see
+`kb/reports/spec-compliance-report.md` run 9 for details. The sorry audit is
+unaffected (no sorry obligations present).
