@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-24
-run: 8
+run: 9
 status: clean
 ---
 
@@ -9,13 +9,12 @@ status: clean
 
 ## Changes since last run
 
-One new file added since run 7: `dal/Dal/ReedSolomon.lean`. The file contains no
-`sorry` or `admit` occurrences. All proofs in `ReedSolomon.lean` — including
-`cosetPoints_injective` and `shard_recovery` — are closed without gaps.
+One new file added since run 8: `dal/Dal/Protocol.lean`. The file contains no
+`sorry` or `admit` occurrences. Both proofs — `page_verification_unique` (P2)
+and `rs_decoding_succeeds` (P1) — are fully closed without gaps.
 
-The KB obligation cross-check is updated: S4 (`shard_recovery`) is now **resolved**
-in `Dal.ReedSolomon.shard_recovery` (see spec-compliance-report run 9 for the
-target-namespace discrepancy, which is a separate finding).
+The KB obligation cross-check is updated: P1 (`rs_decoding_succeeds`) and P2
+(`page_verification_unique`) are now **resolved** in `Dal.Protocol`.
 
 ## Summary
 
@@ -27,6 +26,7 @@ target-namespace discrepancy, which is a separate finding).
 | `dal/Dal/Sharding.lean` | 0 | 0 | 0 |
 | `dal/Dal/Serialization.lean` | 0 | 0 | 0 |
 | `dal/Dal/ReedSolomon.lean` | 0 | 0 | 0 |
+| `dal/Dal/Protocol.lean` | 0 | 0 | 0 |
 | `dal/Dal.lean` | 0 | 0 | 0 |
 | **Total** | **0** | **0** | **0** |
 
@@ -46,24 +46,21 @@ target-namespace discrepancy, which is a separate finding).
 | S3 — vanishing_poly_roots | `Dal.Sharding.vanishing_poly_roots` | **resolved** (proved) |
 | G7 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **resolved** (proved) |
 | S4 — shard_recovery | `Dal.ReedSolomon.shard_recovery` | **resolved** (proved; see spec-compliance W1 re: namespace) |
-| P1 — rs_decoding_succeeds | `Dal.Protocol.rs_decoding_succeeds` | **unstarted** |
-| P2 — page_verification_unique | `Dal.Protocol.page_verification_unique` | **unstarted** |
+| P1 — rs_decoding_succeeds | `Dal.Protocol.rs_decoding_succeeds` | **resolved** (proved) |
+| P2 — page_verification_unique | `Dal.Protocol.page_verification_unique` | **resolved** (proved) |
 
 ## Open KB obligations with no Lean counterpart
 
-The following properties are documented in `kb/properties.md` and `kb/gaps.md` but
-have no Lean file yet. None are expected to have sorries at this stage — they are
-simply unstarted modules.
-
-- **P1** (`Dal.Protocol.rs_decoding_succeeds`) — needs `Dal/Protocol.lean`
-- **P2** (`Dal.Protocol.page_verification_unique`) — needs `Dal/Protocol.lean`
+None. All properties listed in `kb/properties.md` now have corresponding Lean
+theorems. The project is sorry-free across all eight Lean files.
 
 ## Verdict
 
-All clear. The formalization is sorry-free across all seven project files.
-Next task: `Dal/Protocol.lean` (P1, P2).
+All clear. The formalization is sorry-free across all eight project files.
+All main theorems P1 and P2 are proved. No open sorry obligations remain.
 
-Note: a spec-compliance issue was detected in this run regarding the namespace of
-`shard_recovery` (`Dal.ReedSolomon` vs the KB-listed target `Dal.Protocol`) — see
-`kb/reports/spec-compliance-report.md` run 9 for details. The sorry audit is
-unaffected (no sorry obligations present).
+Note: spec-compliance issues remain regarding stale KB metadata (properties.md
+P1/P2 statuses still read `not started`, architecture.md "Current state" still
+missing Protocol, gaps.md G1 "Next task" pointer is stale) — see
+`kb/reports/spec-compliance-report.md` run 10 for details. The sorry audit is
+unaffected.

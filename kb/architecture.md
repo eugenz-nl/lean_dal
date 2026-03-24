@@ -17,8 +17,9 @@ for term definitions.
 ## Current state
 
 `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
-`Dal/Serialization.lean`, and `Dal/ReedSolomon.lean` are implemented and build clean.
-All other modules are unstarted. See [gaps.md](gaps.md) for status.
+`Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, and `Dal/Protocol.lean` are
+implemented and build clean. `Dal/Properties.lean` is unstarted (stub).
+See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Serialization.lean`
 
@@ -169,9 +170,9 @@ dal/
 - The 31-bytes-per-scalar encoding is fixed in this module.
 
 ### `Dal/Protocol.lean`
-- Defines the end-to-end pipeline: `slot → DATA → POLY → (commitment, shards, proofs)`.
-- Defines `proveShardEval` and `verifyShardEval` (multi-reveal).
-- Assembles P1 and P2 from the axioms and lemmas in other modules.
+- Proves P1 (`rs_decoding_succeeds`) and P2 (`page_verification_unique`) from A1–A6.
+- P1 additionally requires `Function.Injective xs` (distinct evaluation points) for A4/A5.
+- `proveEval` returns `Option G1`, so proof conditions are `proveEval p x y = some π`.
 - This module imports all other modules.
 
 ### `Dal/Properties.lean`

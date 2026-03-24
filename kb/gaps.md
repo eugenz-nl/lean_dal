@@ -56,8 +56,10 @@ They must be addressed before the formalization is useful.
 - **Completed**: `Dal/ReedSolomon.lean` — `rsEncode`, `cosetPoints`, `shardVals`,
   `cosetPoint_mem_Ω`, `cosetPoints_injective`, `shard_recovery` (S4). All proved
   without `sorry`.
-- **Next task**: Implement `Dal/Protocol.lean` — assemble P1 (RS decoding succeeds)
-  and P2 (page verification uniqueness) from the existing axioms A1–A6.
+- **Completed**: `Dal/Protocol.lean` — `page_verification_unique` (P2) and
+  `rs_decoding_succeeds` (P1). Both proved without `sorry` from A1–A6 via A4+A5.
+- **Remaining**: `Dal/Properties.lean` (stub) — not yet implemented. All invariants
+  are already proved in their respective modules; this module would re-export them.
 
 ---
 

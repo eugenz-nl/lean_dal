@@ -108,15 +108,18 @@ proof `π_deg : Π`:
 (∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
 → verifyDegree c d π_deg = true
 → ∃! p,  commit p = c
-       ∧ (∀ i, πs i = proveEval p (xs i) (ys i))
+       ∧ (∀ i, proveEval p (xs i) (ys i) = some (πs i))
        ∧ interpolate xs ys = p
 ```
 
+The Lean statement also takes `hxs : Function.Injective xs` (distinct evaluation points),
+required by `interpolate_natDegree` and `poly_unique_of_eval`. In `proveEval`, the return
+type is `Option G1`, so the proof condition uses `= some (πs i)` rather than `πs i = ...`.
+
 - **Lean target**: `Dal.Protocol.rs_decoding_succeeds`
-- **Status**: `not started`
-- **Proof plan**: Apply A1 for each `i` → get candidates `p_i`. Apply A6 → unique `p`.
-  Apply A3 → `deg p ≤ d`. Apply A4 → interpolated `p̃` satisfies `eval p̃ (xs i) = ys i`.
-  Apply A2 → `eval p (xs i) = ys i`. Apply A5 → `p̃ = p`.
+- **Status**: `proved`
+- **Proof**: A1 for each `i` gives candidates; A6 collapses to unique `p`. A2 gives
+  `eval p (xs i) = ys i`. A3 gives degree bound. A4 + A5 give `interpolate xs ys = p`.
 
 ### P2: Page verification uniqueness (Property 2)
 
@@ -125,12 +128,12 @@ proof `π_deg : Π`:
 ```
 (∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
 → ∃! p,  commit p = c
-       ∧ (∀ i, πs i = proveEval p (xs i) (ys i))
+       ∧ (∀ i, proveEval p (xs i) (ys i) = some (πs i))
 ```
 
 - **Lean target**: `Dal.Protocol.page_verification_unique`
-- **Status**: `not started`
-- **Proof plan**: Apply A1 for each `i`. Apply A6 (uniqueness).
+- **Status**: `proved`
+- **Proof**: A1 for each `i` gives candidates; A6 collapses to unique `p`.
 
 ---
 

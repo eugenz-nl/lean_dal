@@ -1,29 +1,103 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-24
-run: 9
-status: 3 warnings, 1 info
+run: 10
+status: 4 warnings, 1 info
 ---
 
 # Spec Compliance Report
 
 ## Changes since last run
 
-One resolved issue from run 8:
+Three open issues from run 9 (W1, W2, W3) are carried forward — they were not
+resolved between run 9 and run 10. One info item (I1 — P1, P2 still `not
+started`) is now partially resolved: `Dal/Protocol.lean` has been written and
+both theorems are proved. However, the KB metadata for P1 and P2 in
+`kb/properties.md` still reads `not started`, which is now stale and raises new
+warnings.
 
-- **W1 resolved** (from run 8): `kb/gaps.md` G7 note still referenced the stale axiom
-  name `slot_size_eq`; that stale reference is tracked as a carried-forward item by
-  the harness-validator — it is not re-raised as a new finding here.
+New findings due to `Dal/Protocol.lean`:
 
-Three new issues identified due to the addition of `Dal/ReedSolomon.lean`:
+- **[W4] NEW** — `kb/properties.md` P1 status is `not started` but
+  `Dal.Protocol.rs_decoding_succeeds` is now fully proved.
+- **[W5] NEW** — `kb/properties.md` P2 status is `not started` but
+  `Dal.Protocol.page_verification_unique` is now fully proved.
+- **[W6] NEW** — `kb/architecture.md` "Current state" still does not list
+  `Dal/Protocol.lean` as implemented (it was missing before, and remains missing
+  after the addition of `Dal/Protocol.lean`).
+- **[W7] NEW** — `kb/gaps.md` G1 "Next task" bullet still reads "Implement
+  `Dal/Protocol.lean`" — now stale, since Protocol.lean is complete.
+- **[I1]** The proof statements require close review against the spec (see below).
 
-- **[W1] NEW** — `shard_recovery` is proved in `Dal.ReedSolomon` but
-  `kb/properties.md` lists its Lean target as `Dal.Protocol.shard_recovery`.
-- **[W2] NEW** — `kb/architecture.md` "Current state" does not list
-  `Dal/ReedSolomon.lean` as implemented.
-- **[W3] NEW** — `kb/spec.md` § S4 helper functions specifies `cosetPoints` with
-  domain `Fin (k / l * l)`, but the Lean implementation uses `Fin (d + 1)`.
-- **[I1]** carried forward from run 8: P1 and P2 still `not started`.
+---
+
+## Statement Compliance Review
+
+### P2: `page_verification_unique`
+
+**Spec statement** (`kb/properties.md` §P2):
+```
+(∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
+→ ∃! p,  commit p = c
+       ∧ (∀ i, πs i = proveEval p (xs i) (ys i))
+```
+
+**Lean statement** (`Dal/Protocol.lean` lines 45–50):
+```lean
+theorem page_verification_unique
+    (c : G1) (xs : Fin (d + 1) → Fr) (ys : Fin (d + 1) → Fr)
+    (πs : Fin (d + 1) → G1)
+    (hverify : ∀ i, verifyEval (xs i) (ys i) c (πs i) = true) :
+    ∃! p : Poly, commit p = c ∧
+                 ∀ i, proveEval p (xs i) (ys i) = some (πs i)
+```
+
+**Analysis**: The spec uses `πs i = proveEval p (xs i) (ys i)` (proof equality
+in `G1`) while the Lean statement uses `proveEval p (xs i) (ys i) = some (πs i)`
+(option equality, since `proveEval` returns `Option G1`). The Lean form is
+strictly stronger and more precise: it asserts that `proveEval` succeeds and
+returns exactly `πs i`. The spec notation `πs i = proveEval p (xs i) (ys i)` was
+written informally assuming `proveEval` returns `G1` directly rather than
+`Option G1`. The Lean statement is correct and conformant with the actual types
+declared in `Dal/KZG.lean`. This is an acceptable strengthening; the spec prose
+should be updated for clarity.
+
+**Verdict**: Conformant. Minor terminology gap noted as [I1] below.
+
+### P1: `rs_decoding_succeeds`
+
+**Spec statement** (`kb/properties.md` §P1):
+```
+(∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
+→ verifyDegree c d π_deg = true
+→ ∃! p,  commit p = c
+       ∧ (∀ i, πs i = proveEval p (xs i) (ys i))
+       ∧ interpolate xs ys = p
+```
+
+**Lean statement** (`Dal/Protocol.lean` lines 77–85):
+```lean
+theorem rs_decoding_succeeds
+    (c : G1) (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (ys : Fin (d + 1) → Fr)
+    (πs : Fin (d + 1) → G1) (π_deg : G1)
+    (hverify : ∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
+    (hdeg : verifyDegree c d π_deg = true) :
+    ∃! p : Poly, commit p = c ∧
+                 (∀ i, proveEval p (xs i) (ys i) = some (πs i)) ∧
+                 interpolate xs ys = p
+```
+
+**Analysis**: Same `Option G1` strengthening as P2. Additionally, the Lean
+statement includes the explicit hypothesis `hxs : Function.Injective xs`
+(distinct evaluation points). The spec statement omits this but the proof plan
+(§P1) notes that A5 requires distinct evaluation points. Adding `hxs` as an
+explicit hypothesis is correct: the distinctness precondition is part of the true
+mathematical statement. The spec prose should be updated to include this
+precondition explicitly.
+
+**Verdict**: Conformant. The `hxs` precondition is a spec clarification, not a
+weakening. Noted as [I1] below.
 
 ---
 
@@ -31,65 +105,91 @@ Three new issues identified due to the addition of `Dal/ReedSolomon.lean`:
 
 ### [W1] `shard_recovery` namespace: `Dal.ReedSolomon` vs `Dal.Protocol`
 
-- **KB location**: `kb/properties.md` § S4: Shard recovery (MDS property), Lean
-  target field: `Dal.Protocol.shard_recovery`; status field: `not started`
-- **Lean location**: `dal/Dal/ReedSolomon.lean` lines 144–161:
-  `theorem shard_recovery` in `namespace Dal.ReedSolomon`
-- **Issue**: `properties.md` lists the target namespace as `Dal.Protocol`, implying
-  `shard_recovery` belongs in `Dal/Protocol.lean`. The actual theorem lives in
-  `Dal.ReedSolomon`. The KB status `not started` is also wrong — the theorem is
-  fully proved.
-- **Impact**: An agent consulting `properties.md` would conclude S4 is unproved and
-  would attempt to write it again in `Dal/Protocol.lean`, creating a duplicate.
-- **Action required**: Update `kb/properties.md` S4 entry:
-  - Change Lean target to `Dal.ReedSolomon.shard_recovery`
-  - Change status to `proved`
+*(Carried forward from run 9.)*
+
+- **KB location**: `kb/properties.md` § S4, Lean target `Dal.Protocol.shard_recovery`;
+  status `not started`
+- **Lean location**: `dal/Dal/ReedSolomon.lean`, `namespace Dal.ReedSolomon`
+- **Action required**: Update `kb/properties.md` S4:
+  - Lean target → `Dal.ReedSolomon.shard_recovery`
+  - Status → `proved`
 
 ### [W2] `kb/architecture.md` "Current state" does not include `Dal/ReedSolomon.lean`
 
-- **KB location**: `kb/architecture.md` § Current state, first paragraph:
-  "`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`, and
-  `Dal/Serialization.lean` are implemented and build clean. All other modules are
-  unstarted."
-- **Lean location**: `dal/Dal/ReedSolomon.lean` — file exists and is complete.
-  `dal/Dal.lean` line 6: `import Dal.ReedSolomon`.
-- **Issue**: The "Current state" paragraph does not mention `Dal/ReedSolomon.lean`,
-  and "All other modules are unstarted" is now false.
-- **Action required**: Update the "Current state" sentence to include
-  `Dal/ReedSolomon.lean` in the list of implemented modules, and add an
-  `### Implementation notes for Dal/ReedSolomon.lean` section documenting the
-  key design choices (`d_succ_eq_k`, `kl_eq_d_succ`, `cosetPoints` using
-  `Finset.orderIsoOfFin`, proof strategy for `cosetPoints_injective` via
-  `cosets_disjoint` and `ω_pow_inj`).
+*(Carried forward from run 9.)*
+
+- **KB location**: `kb/architecture.md` § Current state
+- **Note**: `Dal/ReedSolomon.lean` is implemented; the "Current state" sentence still
+  reads as if it ends at `Dal/Serialization.lean`.
+- **Action required**: Update "Current state" to include `Dal/ReedSolomon.lean`.
 
 ### [W3] `cosetPoints` domain type: spec says `Fin (k / l * l)`, Lean uses `Fin (d + 1)`
 
-- **KB location**: `kb/spec.md` § S4 helper functions:
-  "`cosetPoints : Finset (Fin s) → Fin (k / l * l) → X`"
-- **Lean location**: `dal/Dal/ReedSolomon.lean` line 68:
-  `noncomputable def cosetPoints (I : Finset (Fin s)) (hI : I.card = k / l) (m : Fin (d + 1)) : Fr`
-- **Analysis**: The Lean file uses `Fin (d + 1)` as the domain index type rather
-  than `Fin (k / l * l)`. These are propositionally equal by the lemma
-  `kl_eq_d_succ : k / l * l = d + 1` (proved on line 45–46 of ReedSolomon.lean),
-  so the two types are definitionally distinct but mathematically equivalent.
-  The choice to use `Fin (d + 1)` is deliberate (noted in `Dal.Poly.interpolate`
-  which uses `Fin (d+1)`), but the spec text uses a different expression.
-- **Impact**: Low — the difference is cosmetic and mathematically trivial. However,
-  an agent generating code from the spec signature would produce a type mismatch.
+*(Carried forward from run 9.)*
+
 - **Action required**: Update `kb/spec.md` § S4 helper functions to use `Fin (d + 1)`
-  as the domain (or add a note that `k / l * l = d + 1` and `Fin (d + 1)` is
-  the Lean implementation choice), and do the same for `shardVals`.
+  or add a note documenting the equivalence.
+
+### [W4] `kb/properties.md` P2 status is `not started` — theorem is now proved
+
+- **KB location**: `kb/properties.md` § P2: Page verification uniqueness, status field
+- **Reality**: `Dal/Protocol.lean` contains `theorem page_verification_unique` in
+  `namespace Dal.Protocol`, proved without `sorry`.
+- **Impact**: An agent consulting `properties.md` would conclude P2 is unimplemented
+  and attempt to write it again.
+- **Action required**: Update `kb/properties.md` P2 entry:
+  - Status → `proved`
+
+### [W5] `kb/properties.md` P1 status is `not started` — theorem is now proved
+
+- **KB location**: `kb/properties.md` § P1: RS decoding succeeds, status field
+- **Reality**: `Dal/Protocol.lean` contains `theorem rs_decoding_succeeds` in
+  `namespace Dal.Protocol`, proved without `sorry`.
+- **Impact**: Same as W4 — stale `not started` would mislead agents.
+- **Action required**: Update `kb/properties.md` P1 entry:
+  - Status → `proved`
+  - Note: add `hxs : Function.Injective xs` to the formal statement to match Lean.
+
+### [W6] `kb/architecture.md` "Current state" does not include `Dal/Protocol.lean`
+
+- **KB location**: `kb/architecture.md` § Current state, first paragraph
+- **Reality**: `Dal/Protocol.lean` is now implemented. `Dal.lean` imports it on
+  line 7 (`import Dal.Protocol`).
+- **Issue**: The "Current state" paragraph lists modules up through `Dal/ReedSolomon.lean`
+  (which itself is already a carried-forward gap from W2) and states "All other modules
+  are unstarted." Both `Dal/ReedSolomon.lean` and `Dal/Protocol.lean` contradict this.
+- **Action required**: Update "Current state" to add `Dal/Protocol.lean` to the list of
+  implemented modules; add an implementation notes section `### Implementation notes for
+  Dal/Protocol.lean` documenting the proof strategy (A1+A6 for P2; A1+A6+A2+A3+A4+A5
+  for P1) and the `Option G1` / `Function.Injective` strengthening vs the spec prose.
+
+### [W7] `kb/gaps.md` G1 "Next task" pointer is stale after `Dal/Protocol.lean` completion
+
+- **KB location**: `kb/gaps.md` § G1, "Next task" bullet
+- **Current text**: "Next task: Implement `Dal/Protocol.lean` — assemble P1 (RS decoding
+  succeeds) and P2 (page verification uniqueness) from the existing axioms A1–A6."
+- **Reality**: `Dal/Protocol.lean` is now complete with P1 and P2 proved.
+- **Action required**: Update G1:
+  - Add "Completed" bullet for `Dal/Protocol.lean` listing `page_verification_unique`
+    (P2) and `rs_decoding_succeeds` (P1). Both proved without `sorry`.
+  - Update "Next task" to reflect remaining work (KB metadata updates, or
+    `Dal/Properties.lean` if desired).
 
 ---
 
 ## Info
 
-### [I1] P1, P2 still `not started`; all other properties resolved or proved
+### [I1] Lean statements are strictly stronger than spec prose in two ways
 
-- **KB location**: `kb/properties.md`
-- **Lean location**: missing (`Dal/Protocol.lean` not yet written)
-- **Status**: Expected at this stage. S4 is now proved (in `Dal.ReedSolomon`).
-  P1 and P2 require `Dal/Protocol.lean`.
+- **`proveEval` returns `Option G1`**: The spec prose writes
+  `πs i = proveEval p (xs i) (ys i)` as if `proveEval` returns `G1` directly.
+  The Lean form `proveEval p (xs i) (ys i) = some (πs i)` is more precise.
+  `kb/properties.md` P1 and P2 spec statements should be updated to use
+  `proveEval p (xs i) (ys i) = some (πs i)`.
+- **`hxs : Function.Injective xs` in P1**: The spec proof plan mentions distinctness
+  but does not list it as a hypothesis in the formal statement box.
+  `kb/properties.md` P1 statement block should add `hxs : Function.Injective xs`
+  as an explicit precondition.
 
 ---
 
@@ -131,9 +231,9 @@ Three new issues identified due to the addition of `Dal/ReedSolomon.lean`:
 | `cosetPoints` helper | spec.md § S4 helpers | `Dal.ReedSolomon.cosetPoints` | proved (see W3 re: domain type) |
 | `shardVals` helper | spec.md § S4 helpers | `Dal.ReedSolomon.shardVals` | proved (see W3 re: domain type) |
 | S4: Shard recovery (MDS) | properties.md | `Dal.ReedSolomon.shard_recovery` | proved (see W1 re: namespace) |
+| P2: Page verification uniqueness | properties.md | `Dal.Protocol.page_verification_unique` | **proved** |
+| P1: RS decoding succeeds | properties.md | `Dal.Protocol.rs_decoding_succeeds` | **proved** |
 | `shardRemainder` function | spec.md § Sharding | missing | not started |
 | `proveShardEval` function | spec.md § Sharding | missing | not started |
 | `verifyShardEval` function | spec.md § Sharding | missing | not started |
 | `rsDecode` function | spec.md § Reed-Solomon | missing | not started |
-| P1: RS decoding succeeds | properties.md | missing | not started |
-| P2: Page verification uniqueness | properties.md | missing | not started |
