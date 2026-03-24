@@ -16,10 +16,10 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
-`Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, and `Dal/Protocol.lean` are
-implemented and build clean. `Dal/Properties.lean` is unstarted (stub).
-See [gaps.md](gaps.md) for status.
+All modules — `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
+`Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal/Protocol.lean`, and
+`Dal/Properties.lean` — are implemented and build clean with zero sorry.
+See [gaps.md](gaps.md) for the complete history.
 
 ### Implementation notes for `Dal/Serialization.lean`
 

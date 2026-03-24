@@ -5,3 +5,4 @@ import Dal.Sharding
 import Dal.Serialization
 import Dal.ReedSolomon
 import Dal.Protocol
+import Dal.Properties

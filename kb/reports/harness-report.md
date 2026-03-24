@@ -1,28 +1,38 @@
 ---
 auditor: harness-validator
 date: 2026-03-24
-run: 11
-status: pass (4 warnings, 3 info)
+run: 12
+status: pass (1 info)
 ---
 
 # Harness Validation Report
 
 ## Changes since last run
 
-Three warnings carried forward from run 10 (W1, W2, W3) remain unresolved.
-Info items I2 and I3 are also carried forward. I1 from run 10 (Dal.lean does
-not reflect Protocol in architecture.md) is now subsumed into W4 below.
+All warnings from run 11 (W1–W6) are now resolved:
 
-Four new warnings and one new info item are raised due to the addition of
-`Dal/Protocol.lean`:
-
-- **[W4] NEW** — `kb/architecture.md` "Current state" does not include
+- **W1 resolved** — `kb/architecture.md` "Current state" now includes
+  `Dal/ReedSolomon.lean`.
+- **W2 resolved** — `kb/properties.md` S4 Lean target is now
+  `Dal.ReedSolomon.shard_recovery` with status `proved`.
+- **W3 / W6 resolved** — `kb/gaps.md` G1 "Next task" / "Remaining" now correctly
+  points to `Dal/Properties.lean`; `Dal/Protocol.lean` has a completed bullet.
+- **W4 resolved** — `kb/architecture.md` "Current state" now includes
   `Dal/Protocol.lean`.
-- **[W5] NEW** — `kb/properties.md` P1 and P2 statuses are still `not started`
-  but both theorems are now proved.
-- **[W6] NEW** — `kb/gaps.md` G1 "Next task" pointer is stale.
-- **[I1] NEW** — `Dal.lean` now imports both `Dal.ReedSolomon` and `Dal.Protocol`,
-  but neither addition is reflected in `kb/architecture.md` "Current state".
+- **W5 resolved** — `kb/properties.md` P1 and P2 statuses are now `proved`; formal
+  statement blocks match the Lean statements.
+
+Info items I1–I3 from run 11:
+
+- **I1 resolved** — `Dal.lean` imports of `Dal.ReedSolomon` and `Dal.Protocol`
+  are now reflected in `kb/architecture.md`.
+- **I2 resolved** — `kb/glossary.md` missing serialization entries (`Bytes`,
+  `serialize`, `slot_size_le`, `bytes31_lt_r`) are now present; `k` row updated.
+- **I3 resolved** — `kb/spec.md` S4 helper functions domain type now uses
+  `Fin (d+1)`.
+
+New file `Dal/Properties.lean` added; `Dal.lean` now imports it on line 8.
+One new info item raised (I1) regarding `kb/gaps.md` G1 "Remaining" being stale.
 
 ---
 
@@ -34,6 +44,7 @@ Four new warnings and one new info item are raised due to the addition of
 - [x] All 3 ADRs linked from `decisions/index.md` exist:
   `001-kzg-axioms.md`, `002-kzg-over-poly.md`, `003-field-parameters-as-axioms.md`
 - [x] All cross-references within KB files resolve correctly
+- [x] `kb/architecture.md` dependency graph shows `Protocol → Properties` path
 
 ## Missing Frontmatter
 
@@ -49,6 +60,8 @@ Four new warnings and one new info item are raised due to the addition of
 - [x] `harness-validator.md` present — covers methodology and infrastructure
 - [x] Every property in `kb/properties.md` (A1–A6, P1, P2, S1–S4) falls under at
   least one auditor's scope (sorry-auditor + spec-compliance-auditor)
+- [x] `Dal/Properties.lean` theorems are covered by sorry-auditor (9 files scanned)
+  and spec-compliance-auditor (coverage matrix updated to include re-exports)
 
 ## Ralph Loop Integrity
 
@@ -76,14 +89,12 @@ Four new warnings and one new info item are raised due to the addition of
   - §KZG polynomial commitment scheme → `kb/spec.md` § KZG, `kb/properties.md` A1–A6
   - §Sharding → `kb/spec.md` § Sharding, `kb/properties.md` S2–S3
   - §Serialize a byte sequence → `kb/spec.md` § Serialization, `kb/properties.md` S1
-- [ ] **[I1] Sections of `docs/protocol.md` with no KB coverage** (intentional):
-  - §The Fast Fourier Transform / §Prime factor algorithm — out of scope; tracked in
-    `kb/gaps.md` § "TODO: Areas not yet analyzed"
-  - §Bound proof on the degree of committed polynomials — out of scope; axiomatized
-    as A3; tracked in `kb/gaps.md`
-  - §BLS12-381 pairing-friendly elliptic curve — opaque types; tracked in `kb/gaps.md`
-  - §Multiple multi-reveals (complexity) — out of scope; tracked in `kb/gaps.md`
-  - All intentionally deferred and documented. No action needed.
+- [x] Sections of `docs/protocol.md` with no KB coverage are intentional and
+  tracked in `kb/gaps.md` § "TODO: Areas not yet analyzed":
+  - §The Fast Fourier Transform / §Prime factor algorithm — out of scope
+  - §Bound proof on the degree of committed polynomials — axiomatized as A3
+  - §BLS12-381 pairing-friendly elliptic curve — opaque types
+  - §Multiple multi-reveals (complexity) — out of scope
 
 ## KB / Architecture Alignment
 
@@ -92,68 +103,43 @@ Four new warnings and one new info item are raised due to the addition of
   `slot_size_le` and `bytes31_lt_r`
 - [x] `kb/spec.md` § Parameters Constraints lists `slot_size ≤ k * 31` and
   `256^31 < r`
-- [ ] **[W1] `kb/architecture.md` "Current state" does not include `Dal/ReedSolomon.lean`**
-  *(Carried forward from run 10.)*:
-  The "Current state" paragraph does not mention `Dal/ReedSolomon.lean`.
-  **Recommendation**: Update "Current state" to include `Dal/ReedSolomon.lean`.
-- [ ] **[W4] `kb/architecture.md` "Current state" does not include `Dal/Protocol.lean`**:
-  `dal/Dal.lean` line 7 now imports `Dal.Protocol`. `Dal/Protocol.lean` is fully
-  implemented with P1 and P2 proved. The "Current state" paragraph does not reflect
-  this. The claim "All other modules are unstarted" is doubly false.
-  **Recommendation**: Update "Current state" to include `Dal/Protocol.lean` in the
-  list of implemented modules. Add an `### Implementation notes for Dal/Protocol.lean`
-  section documenting: proof strategy for P2 (A1 + A6); proof strategy for P1
-  (A1 + A6 + A2 + A3 + A4 + A5); the `Option G1` strengthening vs spec prose;
-  the explicit `Function.Injective xs` precondition in P1.
+- [x] `kb/architecture.md` "Current state" includes all implemented modules:
+  `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
+  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal/Protocol.lean`; notes
+  `Dal/Properties.lean` as now implemented
+- [x] `kb/architecture.md` dependency graph includes `Properties` as the leaf node
+  downstream of `Protocol`
+- [x] `kb/architecture.md` § Dal/Properties.lean module responsibilities section
+  is present and accurately describes the re-export role
+- [x] `kb/architecture.md` Lake project file listing includes `Properties.lean`
 
 ## Gap Tracking
 
-- [x] Zero `sorry` / `admit` occurrences in all Lean files
-  (`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
-  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal/Protocol.lean`, `Dal.lean`)
+- [x] Zero `sorry` / `admit` occurrences in all Lean files (nine files):
+  `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
+  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal/Protocol.lean`,
+  `Dal/Properties.lean`, `Dal.lean`
 - [x] `kb/gaps.md` exists and tracks all open obligations
-- [ ] **[W2] `kb/properties.md` S4 entry is stale** *(Carried forward from run 10.)*:
-  - Lean target is `Dal.Protocol.shard_recovery` but the theorem lives at
-    `Dal.ReedSolomon.shard_recovery`.
-  - Status is `not started` but the theorem is proved without `sorry`.
-  **Recommendation**: Update S4 entry: Lean target → `Dal.ReedSolomon.shard_recovery`;
-  status → `proved`.
-- [ ] **[W5] `kb/properties.md` P1 and P2 statuses are `not started` — both theorems
-  are now proved**:
-  - P1 (`rs_decoding_succeeds`) — status `not started`; proved in `Dal.Protocol`.
-  - P2 (`page_verification_unique`) — status `not started`; proved in `Dal.Protocol`.
-  The spec statement blocks also have two precision gaps vs the Lean statements
-  (see spec-compliance-report run 10 I1 for details).
-  **Recommendation**: Update `kb/properties.md` P1 and P2: status → `proved`; update
-  statement blocks to use `proveEval p (xs i) (ys i) = some (πs i)` and add
-  `hxs : Function.Injective xs` to P1.
-- [ ] **[W3] `kb/gaps.md` G1 "Next task" pointer is stale** *(Carried forward from run 10.)*:
-  The "Next task" bullet reads "Implement `Dal/Protocol.lean`…" but that module is
-  now complete with P1 and P2 proved.
-  **Recommendation**: Add completed bullet for `Dal/Protocol.lean`; update "Next task"
-  to remaining work (KB metadata updates, or declare formalization complete).
-- [ ] **[W6] `kb/gaps.md` G1 "Next task" — same issue, restated for this run**:
-  Same finding as W3 but now `Dal/Protocol.lean` is the stale pointer.
-
-## Additional Open Items from Other Auditors
-
-- [ ] **[I2] `kb/glossary.md` missing entries for serialization terms**
-  (from ambiguity-report run 12 I1): `Bytes`, `slot_size_le`, `bytes31_lt_r`, and
-  `serialize` are not defined in `kb/glossary.md`; the `k` row description is also
-  stale (`k ≈ slot_size / 31`).
-  **Recommendation**: Add the four missing entries and update the `k` row on the next
-  KB update pass. Low urgency.
-
-- [ ] **[I3] `kb/spec.md` S4 helper functions domain type uses `Fin (k / l * l)` but
-  Lean uses `Fin (d + 1)`** (from spec-compliance-report run 10 W3):
-  **Recommendation**: Update `kb/spec.md` § S4 helper functions to use `Fin (d + 1)`
-  or add a note documenting the equivalence.
+- [x] `kb/properties.md` S4 entry: Lean target `Dal.ReedSolomon.shard_recovery`,
+  status `proved`
+- [x] `kb/properties.md` P1 status `proved`, statement matches Lean (includes
+  `hxs : Function.Injective xs`, uses `= some (πs i)`)
+- [x] `kb/properties.md` P2 status `proved`, statement matches Lean
+  (uses `= some (πs i)`)
+- [x] `kb/gaps.md` G1 completed bullets include all seven modules: Field, Poly, KZG,
+  Sharding, Serialization, ReedSolomon, Protocol
+- [ ] **[I1]** `kb/gaps.md` G1 "Remaining" still describes `Dal/Properties.lean`
+  as a stub — now outdated since `Dal/Properties.lean` is fully implemented.
+  **Recommendation**: Move Properties.lean to the "Completed" list in G1; update
+  or remove the "Remaining" paragraph to declare the core formalization complete.
 
 ## `lake build` Gate
 
 - [x] `lake build` passes with zero errors and zero warnings (confirmed by
-  sorry-report run 9; `Dal/Protocol.lean` has no `sorry` occurrences)
-- [x] Zero sorries across all eight project `.lean` files
+  sorry-report run 10; `Dal/Properties.lean` has no `sorry` occurrences)
+- [x] Zero sorries across all nine project `.lean` files
+- [x] `Dal.lean` imports all nine modules (Field, Poly, KZG, Sharding, Serialization,
+  ReedSolomon, Protocol, Properties confirmed on lines 1–8)
 
 ---
 
@@ -169,7 +155,7 @@ Four new warnings and one new info item are raised due to the addition of
 - [x] `kb-update.md` references ambiguity-auditor
 - [x] `kb/spec.md` references `docs/protocol.md`
 - [x] Uncovered `docs/protocol.md` sections are tracked in `kb/gaps.md`
-- [x] Zero sorries across all Lean files
+- [x] Zero sorries across all Lean files (nine files)
 - [x] `kb/gaps.md` exists and all sorry obligations are tracked
 - [x] ADRs 001, 002, 003 — all `implemented`
 - [x] `kb/architecture.md` uses `shardEval` (not `shard`)
@@ -178,9 +164,14 @@ Four new warnings and one new info item are raised due to the addition of
 - [x] `kb/properties.md` S1 status is `proved`
 - [x] `decisions/001-kzg-axioms.md` §"What NOT to do" includes A2
 - [x] `Dal/Protocol.lean` imports are correct (Field, Poly, KZG, Sharding,
-  Serialization, ReedSolomon)
+  Serialization, ReedSolomon — via transitive imports)
 - [x] P1 (`rs_decoding_succeeds`) and P2 (`page_verification_unique`) proved in
   `Dal.Protocol` without `sorry`
+- [x] `Dal/Properties.lean` re-exports all 8 theorems (S1, S2×2, S3, S4, P1, P2)
+  without `sorry`, via delegation to their respective modules
+- [x] `kb/glossary.md` has entries for `Bytes`, `serialize`, `slot_size_le`,
+  `bytes31_lt_r`; `k` row uses `slot_size ≤ k * 31`
+- [x] `kb/spec.md` S4 helper functions domain type uses `Fin (d+1)`
 
 ---
 
@@ -188,12 +179,4 @@ Four new warnings and one new info item are raised due to the addition of
 
 | ID | Severity | Description | Action |
 |----|----------|-------------|--------|
-| W1 | Warning | `kb/architecture.md` "Current state" omits `Dal/ReedSolomon.lean` | Add module to implemented list; add implementation notes section |
-| W2 | Warning | `kb/properties.md` S4 Lean target and status are stale | Update target to `Dal.ReedSolomon.shard_recovery`; status to `proved` |
-| W3 | Warning | `kb/gaps.md` G1 "Next task" still points to `Dal/Protocol.lean` (now complete) | Add completed bullet for Protocol; update next task |
-| W4 | Warning | `kb/architecture.md` "Current state" omits `Dal/Protocol.lean` | Add module to implemented list; add implementation notes section |
-| W5 | Warning | `kb/properties.md` P1 and P2 statuses are `not started`; spec statement precision gaps | Update statuses to `proved`; fix statement blocks |
-| W6 | Warning | `kb/gaps.md` G1 "Next task" stale (same as W3, explicit restatement) | Merged with W3 action |
-| I1 | Info | Sections of `docs/protocol.md` with no KB coverage (intentional) | No action needed; tracked in `kb/gaps.md` |
-| I2 | Info | `kb/glossary.md` missing entries for serialization terms; `k` row stale | Add entries on next KB update pass |
-| I3 | Info | `kb/spec.md` S4 helper functions domain type mismatch with Lean (`Fin (k/l*l)` vs `Fin (d+1)`) | Update spec text to use `Fin (d+1)` or add equivalence note |
+| I1 | Info | `kb/gaps.md` G1 "Remaining" describes `Dal/Properties.lean` as a stub — now complete | Move to Completed; declare core formalization done |

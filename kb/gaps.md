@@ -33,8 +33,8 @@ They must be addressed before the formalization is useful.
 ### G1: Entire formalization is unstarted
 
 - **Scope**: All modules in `Dal/` (`Field`, `Poly`, `KZG`, `Sharding`,
-  `Serialization`, `Protocol`, `Properties`)
-- **Status**: `in-progress`
+  `Serialization`, `ReedSolomon`, `Protocol`, `Properties`)
+- **Status**: `resolved`
 - **Completed**: `Dal/Field.lean` — `Fr`, all deployment parameters and
   constraints, `ω`, `ω_isPrimitiveRoot`, and three derived theorems.
 - **Completed**: `Dal/Poly.lean` — `Poly` type alias, `interpolate` (wrapping
@@ -58,8 +58,11 @@ They must be addressed before the formalization is useful.
   without `sorry`.
 - **Completed**: `Dal/Protocol.lean` — `page_verification_unique` (P2) and
   `rs_decoding_succeeds` (P1). Both proved without `sorry` from A1–A6 via A4+A5.
-- **Remaining**: `Dal/Properties.lean` (stub) — not yet implemented. All invariants
-  are already proved in their respective modules; this module would re-export them.
+- **Completed**: `Dal/Properties.lean` — correctness certificate re-exporting all
+  eight proved invariants: `s1_serialize_injective`, `s2_coset_partition`,
+  `s2_cosets_disjoint`, `s3_vanishing_poly_roots`, `s4_shard_recovery`,
+  `p2_page_verification_unique`, `p1_rs_decoding_succeeds`. Zero sorry.
+- **Status**: `G1` is fully resolved. All modules in `Dal/` build clean with zero sorry.
 
 ---
 
