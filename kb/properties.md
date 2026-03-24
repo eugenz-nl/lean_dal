@@ -26,53 +26,70 @@ See also: [spec.md](spec.md) for context; [gaps.md](gaps.md) for open obligation
 
 ---
 
-## Axioms (KZG scheme properties)
+## Axioms (KZG security properties)
 
-These are **not proved** — they are assumed. The KZG construction satisfies them
-under the `d`-strong Diffie-Hellman assumption. See
-[decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+These are **not proved** — they are asserted as Lean `axiom` declarations. The KZG
+construction satisfies them under the `d`-strong Diffie-Hellman assumption, which
+is a computational hardness assumption and cannot be proved in pure mathematics.
+See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 ### A1: Eval soundness
 `verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
 
 - **Lean target**: `Dal.KZG.verifyEval_soundness`
+- **Lean form**: `axiom`
 - **Status**: `not started`
 
 ### A2: Eval completeness
 `proveEval p x y = some π ↔ eval p x = y`
 
 - **Lean target**: `Dal.KZG.proveEval_complete`
+- **Lean form**: `axiom`
 - **Status**: `not started`
 
 ### A3: Degree soundness
 `verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
 
 - **Lean target**: `Dal.KZG.verifyDegree_soundness`
+- **Lean form**: `axiom`
 - **Status**: `not started`
+
+### A6: Commitment binding
+`commit p = commit p̃ → p = p̃`
+
+- **Lean target**: `Dal.KZG.commit_binding`
+- **Lean form**: `axiom`
+- **Status**: `not started`
+- **Note**: Technically false in pure math (two distinct polynomials can share a
+  commitment with negligible probability); true under `d`-SDH. See
+  [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
+---
+
+## Provable lemmas (from Mathlib)
+
+These are **not axioms** — they are theorems that follow from the mathematics of
+polynomials over finite fields and should be provable using Mathlib. See
+[decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 ### A4: Interpolation correctness
 `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
 
 - **Lean target**: `Dal.Poly.interpolate_correct`
+- **Lean form**: `theorem` (proved)
 - **Status**: `not started`
-- **Note**: This may be provable from Mathlib's Lagrange interpolation, not just an
-  axiom. To be determined.
+- **Proof path**: Mathlib's `Polynomial.Lagrange` provides Lagrange interpolation
+  over fields. The correctness statement should follow directly.
 
 ### A5: Polynomial uniqueness from evaluations
-`deg p ≤ d → deg p̃ ≤ d → (∀ i ∈ [0,d], eval p (xs i) = eval p̃ (xs i)) → p = p̃`
+`deg p ≤ d → deg p̃ ≤ d → (∀ i ∈ Fin (d+1), eval p (xs i) = eval p̃ (xs i)) → p = p̃`
 
 - **Lean target**: `Dal.Poly.poly_unique_of_eval`
+- **Lean form**: `theorem` (proved)
 - **Status**: `not started`
-- **Note**: This follows from the fact that a nonzero polynomial of degree `≤ d`
-  has at most `d` roots. Should be provable from Mathlib.
-
-### A6: Commitment binding (computational assumption)
-`commit p = commit p̃ → p = p̃`
-
-- **Lean target**: `Dal.KZG.commit_binding`
-- **Status**: `not started` (will be `axiom`)
-- **Note**: Computationally binding under `d`-SDH. Cannot be proved in pure Lean —
-  asserted as `axiom`. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+- **Proof path**: A nonzero polynomial of degree `≤ d` has at most `d` roots
+  (Mathlib: `Polynomial.card_roots_le_degree`). If `p - p̃` has `d+1` roots and
+  degree `≤ d`, then `p - p̃ = 0`.
 
 ---
 

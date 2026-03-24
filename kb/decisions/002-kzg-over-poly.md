@@ -1,7 +1,7 @@
 ---
 title: "Decision 002: KZG operates on Polynomial 𝔽_r"
-last-updated: 2026-03-23
-status: accepted
+last-updated: 2026-03-24
+status: implemented
 ---
 
 # Decision 002: KZG Functions Operate on `Polynomial 𝔽_r`
@@ -40,3 +40,9 @@ and `Dal/ReedSolomon.lean`.
   `Dal/Protocol.lean`.
 - Shard operations work on evaluations (`𝔽_r`) not on the polynomial directly, but
   the polynomial is the shared object that links commitment to shards.
+
+## KB changes (required for `implemented` status)
+
+- [x] `kb/architecture.md`: `Dal/KZG.lean` module description states it operates
+  on `Polynomial 𝔽_r` and does not import `Serialization`. *(Present from initial
+  bootstrap 2026-03-23.)*

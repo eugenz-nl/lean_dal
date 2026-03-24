@@ -1,7 +1,8 @@
 ---
 auditor: ambiguity-auditor
 date: 2026-03-23
-status: 0 critical, 4 warnings, 3 info
+run: 1
+status: 0 critical, 4 warnings, 3 info (all resolved in same session)
 ---
 
 # Ambiguity Audit Report

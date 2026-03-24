@@ -36,6 +36,32 @@ this KB, the Lean file is wrong.
 - Check `gaps.md` before adding a `sorry` — it may already be tracked, or the obligation may already exist elsewhere.
 - Check `decisions/` before choosing between two formalization approaches.
 
+## Report versioning convention
+
+Each auditor writes a **single file** in `kb/reports/` (e.g. `ambiguity-report.md`),
+overwriting the previous run. This keeps the KB state current without accumulating
+stale files. Git history is the archive of past runs.
+
+To support meaningful diffs, every report frontmatter carries a `run` counter
+(incremented on each run) and the date:
+
+```yaml
+---
+auditor: ambiguity-auditor
+date: 2026-03-24
+run: 2
+---
+```
+
+When writing a report, the auditor must:
+1. Read the existing report to get the current `run` number (default 0 if absent).
+2. Increment it by 1 in the new report.
+3. Include a brief **"Changes since last run"** section at the top of the report
+   body (before the findings), summarising what is new, resolved, or unchanged.
+   This makes `git diff` immediately interpretable.
+
+Reports are **never** manually edited — they are owned by the auditor skills.
+
 ## Deterministic validation gate
 
 `lake build` in `dal/` must succeed with zero errors, zero warnings, and zero

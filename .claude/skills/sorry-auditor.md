@@ -30,14 +30,24 @@ that must be tracked and eventually discharged.
 
 ## Output format
 
+Before writing, read `kb/reports/sorry-report.md` to get the current `run` number
+(use 0 if absent). Increment it by 1 in the new report.
+
 Write `kb/reports/sorry-report.md`:
 
 ```
 ---
 auditor: sorry-auditor
 date: <today>
+run: <incremented run number>
 status: <N untracked, M tracked, K structural>
 ---
+
+## Changes since last run
+
+- <new sorries added since last run>
+- <sorries discharged since last run>
+- "No changes" if identical
 
 ## Summary
 

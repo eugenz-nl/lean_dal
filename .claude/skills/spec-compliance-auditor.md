@@ -38,14 +38,23 @@ at `kb/reports/spec-compliance-report.md`.
 
 ## Output format
 
+Before writing, read `kb/reports/spec-compliance-report.md` to get the current
+`run` number (use 0 if absent). Increment it by 1 in the new report.
+
 Write `kb/reports/spec-compliance-report.md`:
 
 ```
 ---
 auditor: spec-compliance-auditor
 date: <today>
+run: <incremented run number>
 status: <N critical, M warnings, K info>
 ---
+
+## Changes since last run
+
+- <resolved or new findings>
+- "No changes" if identical
 
 ## Critical
 

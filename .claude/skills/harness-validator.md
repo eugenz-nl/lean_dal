@@ -1,8 +1,8 @@
 # Harness Validator
 
-Meta-auditor: checks that the KB, the skills, CLAUDE.md, and CURSOR.md form a
-coherent, self-consistent harness for working on this formalization project. Produces
-a report at `kb/reports/harness-report.md`.
+Meta-auditor: checks that the KB, the skills, and CLAUDE.md form a coherent,
+self-consistent harness for working on this formalization project. Produces a report
+at `kb/reports/harness-report.md`.
 
 This auditor does not check Lean proofs — it checks whether the *methodology itself*
 is sound and complete.
@@ -23,15 +23,14 @@ is sound and complete.
 - Does every property in `kb/properties.md` fall under at least one auditor's scope?
 
 **Ralph Loop integrity**
-- Does CLAUDE.md (or CURSOR.md) describe the Ralph Loop?
+- Does CLAUDE.md describe the Ralph Loop?
 - Does it reference the auditor skills by name?
 - Does it require `lake build` as the final validation gate?
 
 **Skill consistency**
 - Does `kb-update.md` reference the ambiguity-auditor?
 - Do auditor skills all write to `kb/reports/` with consistent frontmatter format?
-- Are there skills referenced in CLAUDE.md / CURSOR.md that don't exist in
-  `.claude/skills/`?
+- Are there skills referenced in CLAUDE.md that don't exist in `.claude/skills/`?
 
 **KB vs. docs alignment**
 - Does `kb/spec.md` exist and reference `docs/protocol.md` as its source?
@@ -45,14 +44,23 @@ is sound and complete.
 
 ## Output format
 
+Before writing, read `kb/reports/harness-report.md` to get the current `run`
+number (use 0 if absent). Increment it by 1 in the new report.
+
 Write `kb/reports/harness-report.md`:
 
 ```
 ---
 auditor: harness-validator
 date: <today>
+run: <incremented run number>
 status: <pass / N issues found>
 ---
+
+## Changes since last run
+
+- <resolved or new issues>
+- "No changes" if identical
 
 ## Broken Links
 - [ ] kb/index.md links to <file> which does not exist

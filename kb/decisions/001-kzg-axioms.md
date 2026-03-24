@@ -1,7 +1,7 @@
 ---
 title: "Decision 001: KZG security properties are axioms"
-last-updated: 2026-03-23
-status: accepted
+last-updated: 2026-03-24
+status: implemented
 ---
 
 # Decision 001: KZG Security Properties Are Lean Axioms
@@ -41,7 +41,7 @@ from first principles in Lean.
 
 ## Consequences
 
-- The `Dal/KZG.lean` module contains three `axiom` declarations.
+- The `Dal/KZG.lean` module will contain exactly three `axiom` declarations: A1, A3, A6.
 - The soundness of P1 and P2 is conditional on these axioms.
 - Any future work that eliminates these axioms (e.g., by importing a verified
   cryptography library) can do so by replacing the axiom declarations with theorems.
@@ -49,5 +49,10 @@ from first principles in Lean.
 ## What NOT to do
 
 - Do not assert additional axioms beyond A1, A3, A6 without explicit human approval.
-- A4 (interpolation) and A5 (polynomial uniqueness) are provable from Mathlib and
-  must not be axiomatized.
+- A4 (interpolation correctness) and A5 (polynomial uniqueness) are provable from
+  Mathlib and must not be axiomatized.
+
+## KB changes (required for `implemented` status)
+
+- [x] `kb/properties.md`: A1, A3, A6 listed under **Axioms**; A4 and A5 moved to
+  a separate **Provable lemmas** section (not axioms). *(Applied 2026-03-24.)*

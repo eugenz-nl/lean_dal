@@ -14,7 +14,7 @@ Understand the shape of the project:
 - Read `docs/protocol.md` in full — this is the primary source for the formalization
 - Read `README.md` and any existing `.lean` files (entry points, core type definitions)
 - Read `lakefile.lean` or `lakefile.toml` to understand module structure and dependencies
-- Read `CLAUDE.md` and `CURSOR.md` for methodology constraints
+- Read `CLAUDE.md` for methodology constraints
 - Skim any existing `kb/` files to avoid duplicating work
 
 Do NOT try to formalize anything yet. You are building a map, not a proof.

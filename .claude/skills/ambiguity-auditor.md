@@ -36,14 +36,24 @@ formalizing the protocol unambiguously. Output a structured report to
 
 ## Output format
 
+Before writing, read `kb/reports/ambiguity-report.md` to get the current `run`
+number (use 0 if the file is absent). Increment it by 1 in the new report.
+
 Write `kb/reports/ambiguity-report.md` with this structure:
 
 ```
 ---
 auditor: ambiguity-auditor
 date: <today>
+run: <incremented run number>
 status: <N critical, M warnings, K info>
 ---
+
+## Changes since last run
+
+- <resolved finding IDs, if any>
+- <new finding IDs, if any>
+- "No changes" if identical
 
 ## Critical
 

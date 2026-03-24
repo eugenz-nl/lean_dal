@@ -13,6 +13,72 @@ See also: [spec.md](spec.md) for how these concepts relate; [architecture.md](ar
 
 ---
 
+## Notation
+
+This section fixes the symbols used throughout the KB and the Lean formalization.
+Symbols fall into four categories: **deployment parameters**, **derived quantities**,
+**cryptographic constants**, and **mathematical notation**.
+
+### Deployment parameters
+
+These are fixed for a given DAL deployment. They appear as Lean `variable` or
+`constant` declarations, not as universally-quantified variables in theorem
+statements. The full table with constraints is in [spec.md § Parameters](spec.md).
+
+| Symbol | Type | Meaning |
+|--------|------|---------|
+| `r` | prime | Order of the scalar field `𝔽_r` (BLS12-381, `r ≈ 2^255`) |
+| `slot_size` | `ℕ` | Byte size of a slot |
+| `k` | `ℕ` | Dimension of the RS code; number of scalars encoding a slot (`k ≈ slot_size / 31`) |
+| `n` | `ℕ` | Length of the RS codeword (`n = α · k`, `n ∣ r − 1`) |
+| `α` | `ℕ` | Redundancy factor (`α = n / k ≥ 2`) |
+| `s` | `ℕ` | Number of shards (`s ∣ n`) |
+
+### Derived quantities
+
+These are uniquely determined by the deployment parameters above. They are **not**
+independent parameters.
+
+| Symbol | Definition | Meaning |
+|--------|-----------|---------|
+| `d` | `d = k − 1` | Degree bound of the committed polynomial. A polynomial encoding a valid slot has degree **exactly** `d`; the degree bound `≤ d` is used in theorem statements. `d` is not a free variable. |
+| `l` | `l = n / s` | Shard length: number of evaluations per shard (requires `s ∣ n`) |
+
+> **On `d`**: `d` is a derived constant (`d = k − 1`), not a universally-quantified
+> variable. When theorem statements write `deg p ≤ d`, `d` refers to this fixed value.
+> It is explicit in the axiom statements for readability, but it is not an extra degree
+> of freedom.
+
+### Cryptographic constants
+
+These are part of the trusted setup and the elliptic curve. They are fixed but
+secret (in the case of `τ`) or public-but-opaque (in the case of generators).
+
+| Symbol | Type | Meaning |
+|--------|------|---------|
+| `τ` | `𝔽_r` | Trusted setup secret. **Never appears in Lean proofs** — only the SRS values `[τ^i]_1` and `[τ]_2` are available. Destroyed after setup. |
+| `ω` | `𝔽_r` | Primitive `n`-th root of unity. Exists because `n ∣ r − 1`. Fixed but public. The evaluation domain is `{ω^i : i = 0, …, n−1}`. |
+| `g_1` | `𝔾_1` | Generator of the first elliptic curve group. |
+| `g_2` | `𝔾_2` | Generator of the second elliptic curve group. |
+| `g_T` | `𝔾_T` | Generator of the target group; `e(g_1, g_2) = g_T`. |
+
+### Mathematical notation
+
+| Notation | Meaning |
+|----------|---------|
+| `[a]_1` | Scalar multiplication `a · g_1 ∈ 𝔾_1` |
+| `[a]_2` | Scalar multiplication `a · g_2 ∈ 𝔾_2` |
+| `𝔽_r` | Prime field of order `r` (scalar field of BLS12-381); modelled as `ZMod r` in Lean |
+| `𝔾_1`, `𝔾_2`, `𝔾_T` | Elliptic curve groups of prime order `r`; opaque types in Lean |
+| `e` | Pairing `𝔾_1 × 𝔾_2 → 𝔾_T` |
+| `𝔽_r[x]` | Ring of polynomials over `𝔽_r`; `Polynomial (ZMod r)` in Lean |
+| `Ω_i` | `i`-th coset: `{ω^{i + s·j} : j = 0, …, l−1}` |
+| `Z_i` | Vanishing polynomial for `Ω_i`: `Z_i(x) = x^l − ω^{i·l}` |
+| `CK` | Committing key: `([τ^i]_1)_{i=0}^{n-1}` |
+| `VK` | Verifying key: `[τ]_2` |
+
+---
+
 ## Protocol-level terms
 
 **Slot**

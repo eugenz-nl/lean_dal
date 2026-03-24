@@ -1,6 +1,7 @@
 ---
 auditor: harness-validator
 date: 2026-03-23
+run: 1
 status: pass (2 issues found and fixed in same session)
 ---
 
@@ -32,16 +33,9 @@ status: pass (2 issues found and fixed in same session)
 ## Ralph Loop Integrity
 
 - [x] `CLAUDE.md` describes the Ralph Loop
-- [x] `CURSOR.md` describes the Ralph Loop
-- [x] Both reference `lake build` as the final validation gate
+- [x] `CLAUDE.md` references `lake build` as the final validation gate
+- [x] `CLAUDE.md` names all auditor skills explicitly
 - [x] `kb-update.md` references the ambiguity auditor
-- [ ] **ISSUE**: `CLAUDE.md` and `CURSOR.md` do not name the auditor skills
-  explicitly. They say "run all relevant auditor skills" without listing
-  `ambiguity-auditor`, `sorry-auditor`, `spec-compliance-auditor`. An agent might
-  not know which skills to run.
-  **Recommendation**: Add a bullet to the Ralph Loop section in `CLAUDE.md`:
-  "Auditor skills: `ambiguity-auditor`, `sorry-auditor`, `spec-compliance-auditor`,
-  `harness-validator`."
 
 ## Skill Consistency
 
@@ -83,3 +77,4 @@ status: pass (2 issues found and fixed in same session)
 - [x] `architecture.md` maps KB concepts to planned Lean modules
 - [x] `decisions/` directory with two ADRs covering the two key design choices
 - [x] `reports/` directory exists (will be populated by auditors)
+- [x] No references to `CURSOR.md` remain in the KB or skills

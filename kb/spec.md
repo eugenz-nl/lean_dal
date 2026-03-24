@@ -142,24 +142,28 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
 
 ---
 
-## Specifications (axioms of the KZG scheme)
+## Specifications
 
-These are the mathematical properties that the KZG construction satisfies. They are
-**axioms** in the Lean formalization — asserted without proof because KZG security
-rests on computational hardness assumptions, not pure mathematics. See
-[decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+These are numbered S1–S6 here (following `docs/protocol.md`); in `properties.md`
+they are labelled A1–A6. They are grouped by their Lean status.
 
-1. **(Eval soundness)** `verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
-2. **(Eval completeness)** `proveEval p x y = some π ↔ eval p x = y`
+**Axioms** (A1, A2, A3, A6) — KZG security rests on computational hardness; these
+cannot be proved in pure Lean. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
+1. **(A1 — Eval soundness)** `verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
+2. **(A2 — Eval completeness)** `proveEval p x y = some π ↔ eval p x = y`
    *(Note: `docs/protocol.md` Spec 2 writes the arguments as `proveEval(x,y,p)`,
    reversing the polynomial to last position. This KB standardizes to polynomial-first
-   `(p, x, y)` to match the function signature in the Functions section.)*
-3. **(Degree soundness)** `verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
-4. **(Interpolation correctness)** `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
-5. **(Polynomial uniqueness)** `deg p ≤ d → deg p̃ ≤ d → (∀ i, eval p (xs i) = eval p̃ (xs i)) → p = p̃`
-6. **(Commitment binding — computational)** `commit p = commit p̃ → p = p̃`
-   ⚠ Technically false in pure math; true under the `d`-strong Diffie-Hellman
-   assumption. Formalized as an axiom. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+   `(p, x, y)` to match the function signature above.)*
+3. **(A3 — Degree soundness)** `verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
+6. **(A6 — Commitment binding)** `commit p = commit p̃ → p = p̃`
+   ⚠ Technically false in pure math; true under the `d`-SDH assumption.
+
+**Provable lemmas** (A4, A5) — follow from polynomial arithmetic; provable from
+Mathlib, not axiomatized. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
+4. **(A4 — Interpolation correctness)** `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
+5. **(A5 — Polynomial uniqueness)** `deg p ≤ d → deg p̃ ≤ d → (∀ i, eval p (xs i) = eval p̃ (xs i)) → p = p̃`
 
 ---
 
