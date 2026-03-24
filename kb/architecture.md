@@ -1,6 +1,6 @@
 ---
 title: Formalization Architecture
-last-updated: 2026-03-23
+last-updated: 2026-03-24
 status: draft
 ---
 

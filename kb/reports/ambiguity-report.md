@@ -1,11 +1,19 @@
 ---
 auditor: ambiguity-auditor
-date: 2026-03-23
-run: 1
-status: 0 critical, 4 warnings, 3 info (all resolved in same session)
+date: 2026-03-24
+run: 2
+status: 0 critical, 4 warnings, 4 info
 ---
 
 # Ambiguity Audit Report
+
+## Changes since last run
+
+- **Resolved**: none (W1–W4, I1–I3 from run 1 are still open)
+- **New**: [W4-new] Deployment parameter placement decision not yet an ADR;
+  [I4] `last-updated` frontmatter stale in modified KB files
+
+---
 
 ## Critical
 
@@ -15,68 +23,60 @@ None.
 
 ## Warnings
 
-### [W1] Undefined functions in S4 (shard recovery)
+### [W1] Undefined functions in S4 (shard recovery) — carried from run 1
 - **Location**: `kb/properties.md`, property S4
-- **Issue**: The statement uses `coset_point i j`, `samples_from_shards`, and
-  `shard_val i j` which are not defined in any KB file. An agent cannot write a
-  Lean statement for S4 without inventing these definitions.
+- **Issue**: `coset_points_from`, `vals_from`, and related helper functions
+  referenced in S4 are not defined in any KB file.
 - **Recommendation**: Add precise definitions to `kb/spec.md` (under Sharding
-  functions) or replace the informal expressions with references to `shardEval`
-  and `interpolate` which are already defined. The formal statement should read
-  something like: "∀ I : Finset (Fin s), |I| = k / l → ∀ p, (∀ i ∈ I, ∀ j,
-  shardEval p i j = vs i j) → p = interpolate (coset_points_from I) (vals_from I vs)"
-  with `coset_points_from` formally specified.
+  functions) before implementing `Dal/Sharding.lean`.
 
-### [W2] Divisibility precondition for S4 not stated
-- **Location**: `kb/properties.md`, property S4
-- **Issue**: S4 writes `k / l` without stating that `l | k`. If `l ∤ k`, the
-  integer division is lossy and the statement may be false or vacuous.
-- **Recommendation**: Add `l ∣ k` to the parameter constraints in `kb/spec.md`
-  (Parameters table), or state it explicitly as a precondition of S4.
+### [W2] Divisibility precondition `l ∣ k` for S4 not stated in Parameters — carried from run 1
+- **Location**: `kb/properties.md`, property S4; `kb/spec.md` § Parameters
+- **Issue**: `l ∣ k` is required by the S4 statement (`k / l` must be exact)
+  but does not appear in the Parameters constraints table.
+- **Recommendation**: Add `l ∣ k` to the parameter constraints in `kb/spec.md`.
 
-### [W3] `page_length` and `pages_per_slot` used but not defined as parameters
+### [W3] `page_length` / `pages_per_slot` referenced but not in Parameters table — carried from run 1
 - **Location**: `kb/glossary.md` (Page entry)
-- **Issue**: The Page glossary entry references `page_length` as a parameter, but
-  it does not appear in the Parameters table in `kb/spec.md`.
-- **Recommendation**: Either (a) add `page_length` and `pages_per_slot` to the
-  Parameters table in `kb/spec.md` with the relationship `pages_per_slot = k /
-  page_length`, or (b) note that pages are out of scope for the current
-  formalization and update the glossary accordingly.
+- **Issue**: Page parameters are mentioned in the glossary but absent from the
+  `kb/spec.md` Parameters table.
+- **Recommendation**: Add them to the table with the out-of-scope note already
+  in `kb/spec.md`, or remove the glossary reference.
 
-### [W4] Argument order inconsistency in source for `proveEval` / Spec 2
-- **Location**: `kb/spec.md`, Spec 2 / `docs/protocol.md`
-- **Issue**: In `docs/protocol.md`, the function signature lists `proveEval(P,X,Y)`
-  (polynomial first) but Specification 2 writes `proveEval(x,y,p)∈Π` (polynomial
-  last). The KB (`spec.md`) resolves this by using polynomial-first throughout, but
-  the discrepancy means anyone reading the source doc alongside the KB will be
-  confused.
-- **Recommendation**: Add a note in `kb/spec.md` under A2 stating: "Note: the
-  source document (`docs/protocol.md`, Spec 2) uses argument order `(x, y, p)`;
-  this KB standardizes to `(p, x, y)` to match the function signature."
+### [W4] No ADR for "deployment parameters axiomatized in `Dal/Field.lean`"
+- **Location**: `kb/architecture.md` § Implementation notes for `Dal/Field.lean`
+- **Issue**: The decision to declare `r`, `n`, `n_pos`, `n_dvd_r_sub_one`, `ω`,
+  and `ω_isPrimitiveRoot` as `axiom` (rather than `variable`) is documented in
+  `kb/architecture.md` prose but has no entry in `kb/decisions/`. Without an ADR
+  it is invisible to the decision index and may be re-litigated.
+- **Recommendation**: Create `kb/decisions/003-field-parameters-as-axioms.md`
+  capturing this choice and add it to `decisions/index.md`.
 
 ---
 
 ## Info
 
-### [I1] `Dal/Basic.lean` stub not assigned to a module role
+### [I1] `Dal/Basic.lean` stub not assigned to a module role — carried from run 1
 - **Location**: `kb/architecture.md`
-- **Issue**: The file `dal/Dal/Basic.lean` currently exists with `def hello :=
-  "world"` and is not mentioned in the module plan. It is imported by `Dal.lean`.
-- **Recommendation**: Note in `kb/architecture.md` that `Basic.lean` should be
-  removed or repurposed when actual modules are added. Low priority.
+- **Issue**: `Dal/Basic.lean` (`def hello := "world"`) is still present and
+  imported by `Dal.lean`. It has no role in the planned module structure.
+- **Recommendation**: Remove or repurpose when `Dal/Field.lean` (now done) and
+  `Dal/Poly.lean` are fully in place.
 
-### [I2] Multi-reveal proof computation not covered in KB
-- **Location**: `docs/protocol.md` §Multiple multi-reveals (lines 442–560)
-- **Issue**: The efficient O((n/l) log(n/l)) algorithm for computing all shard
-  proofs simultaneously has no KB coverage.
-- **Recommendation**: Already noted in `kb/gaps.md` §"Areas not yet analyzed".
-  No action needed unless proof generation is in scope.
+### [I2] Multi-reveal proof computation not covered in KB — carried from run 1
+- **Location**: `kb/gaps.md` § "Areas not yet analyzed"
+- **Issue**: Already tracked. No new action.
 
-### [I3] `proveShardEval` multi-reveal verification equation not stated precisely
+### [I3] `shardRemainder` / `proveShardEval` verification equation not precisely stated — carried from run 1
 - **Location**: `kb/spec.md`, Sharding functions
-- **Issue**: `verifyShardEval` references `r_i(τ)` where `r_i` is the remainder of
-  dividing `p` by `Z_i`. This remainder is not defined as a named function in the
-  spec's Functions section.
-- **Recommendation**: Add `remainder : P → Fin s → P` defined as `r_i(x) = p(x) -
-  Z_i(x) * q_i(x)` (or equivalently: the unique polynomial of degree < l such that
-  `p ≡ remainder p i (mod Z_i)`), and reference it in `verifyShardEval`.
+- **Issue**: `verifyShardEval` references `r_i(τ)` where `r_i` is a named
+  remainder function, but `shardRemainder` is defined only informally.
+- **Recommendation**: Ensure `kb/spec.md` definition of `shardRemainder` is
+  precise enough to uniquely determine the Lean function signature before
+  implementing `Dal/Sharding.lean`.
+
+### [I4] `last-updated` frontmatter not updated in modified KB files
+- **Location**: `kb/gaps.md`, `kb/architecture.md`
+- **Issue**: Both files were modified on 2026-03-24 but still carry
+  `last-updated: 2026-03-23`. Minor compliance gap.
+- **Recommendation**: Update frontmatter dates to 2026-03-24.
