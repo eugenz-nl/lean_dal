@@ -44,8 +44,12 @@ They must be addressed before the formalization is useful.
   `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree` as axioms; security
   axioms A1 (`verifyEval_soundness`), A2 (`proveEval_complete`), A3
   (`verifyDegree_soundness`), A6 (`commit_binding`). Zero sorry.
-- **Next task**: Implement `Dal/Sharding.lean` — coset definitions, vanishing
-  polynomials, `shardEval`, and proofs of S2 and S3.
+- **Completed**: `Dal/Sharding.lean` — `cosetPoint`, `Ω`, `Z`, `shardEval`
+  definitions; `s_mul_l_eq_n`, `l_dvd_n`, `coset_index_lt`, `ωs_isPrimitiveRoot`
+  lemmas; `vanishing_poly_roots` (S3), `coset_partition` and `cosets_disjoint`
+  (S2). All proved without `sorry`.
+- **Next task**: Implement `Dal/Serialization.lean` — byte-to-scalar serialization
+  bijection and proof of S1 (injectivity).
 
 ---
 

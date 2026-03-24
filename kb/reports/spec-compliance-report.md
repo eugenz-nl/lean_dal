@@ -1,49 +1,143 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-24
-run: 4
-status: 0 critical, 0 warnings, 2 info
+run: 5
+status: 0 critical, 1 warning, 2 info
 ---
 
 # Spec Compliance Report
 
 ## Changes since last run
 
-- **Resolved**: A1–A3, A6 now declared as axioms in `Dal/KZG.lean`.
-- **New coverage**: `G1`, `G2`, `GT`, `Commitment`, `KZGProof`, `commit`,
-  `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree` all added.
-- `kb/properties.md` updated: A1–A3, A6 → `axiom (declared)`.
+- **New coverage**: `Dal/Sharding.lean` implemented: `cosetPoint`, `Ω`, `Z`,
+  `shardEval`, `s_mul_l_eq_n`, `ωs_isPrimitiveRoot`, `vanishing_poly_roots` (S3),
+  `coset_partition` (S2 union), `cosets_disjoint` (S2 disjointness).
+- S2 and S3 are now proved without `sorry`; updated in coverage matrix.
+- `Dal.lean` updated to import `Dal.Sharding`.
+
+---
 
 ## Critical
 
 None.
 
+---
+
 ## Warnings
 
-None.
+### [W1] Architecture doc names sharding function `shard`; Lean uses `shardEval`
+
+- **KB location**: `kb/architecture.md` § Dal/Sharding.lean responsibility
+- **Lean location**: `dal/Dal/Sharding.lean` line 79
+- **Issue**: `architecture.md` says the sharding module defines
+  `shard : Poly → Fin s → Fin l → 𝔽_r`. The Lean file defines `shardEval`
+  instead. `kb/spec.md` § Sharding calls this function `shardEval`, as does
+  `kb/glossary.md` — so the Lean identifier is correct with respect to the
+  authoritative spec. `architecture.md` is stale.
+- **Action required**: Update `kb/architecture.md` § Dal/Sharding.lean to
+  replace `shard` with `shardEval`.
+
+---
 
 ## Info
 
-### [I1] P1, P2, and S1–S4 still `not started`
-- **KB location**: `kb/properties.md`
-- **Lean location**: missing
-- **Issue**: Expected. P1/P2 require `Dal/Protocol.lean`; S1–S4 require
-  `Dal/Sharding.lean`, `Dal/Serialization.lean`, and `Dal/ReedSolomon.lean`.
+### [I1] P1, P2, S1, S4 still `not started`
 
-### [I2] `cosetPoints` / `shardVals` and sharding functions not yet in Lean
-- **KB location**: `kb/spec.md` § Sharding / § S4 helper functions
-- **Issue**: Expected. Next module is `Dal/Sharding.lean`.
+- **KB location**: `kb/properties.md`
+- **Lean location**: missing (`Dal/Protocol.lean`, `Dal/Properties.lean`,
+  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean` not yet written)
+- **Issue**: Expected at this stage. None of these depend on `Dal/Sharding.lean`
+  being absent; they require the next modules in the dependency chain.
+
+### [I2] Sharding spec functions `shardRemainder`, `proveShardEval`, `verifyShardEval`, `cosetPoints`, `shardVals` not yet in Lean
+
+- **KB location**: `kb/spec.md` § Sharding and § S4 helper functions
+- **Lean location**: missing
+- **Issue**: Expected. These belong in `Dal/Protocol.lean` or a future
+  `Dal/ReedSolomon.lean`. They are not needed for S2/S3 but are required for
+  S4 and the multi-reveal correctness proofs.
+
+---
+
+## Sharding Module Compliance (Dal/Sharding.lean) — Detailed
+
+This section provides the focused comparison requested for the newly implemented
+sharding module.
+
+### `cosetPoint` definition
+
+- **Spec** (`kb/spec.md` § Sharding): `cosetPoint i j = ω^(i + s*j)`, i.e.,
+  `ω^i · (ω^s)^j`.
+- **Lean** (`Dal.Sharding.cosetPoint`): `ω ^ (i.val + s * j.val)`.
+- **Verdict**: Exact match. The exponent `i.val + s * j.val` equals `i + s*j`
+  for `i : Fin s`, `j : Fin l` with `.val` coercions.
+
+### `Ω` definition
+
+- **Spec** (`kb/glossary.md`): `Ω_i = {ω^{i + s·j} : j = 0, …, l−1}`.
+- **Lean** (`Dal.Sharding.Ω`): `Finset.image (cosetPoint i) Finset.univ` where
+  `Finset.univ : Finset (Fin l)`.
+- **Verdict**: Exact match. The image of `Fin l` under `cosetPoint i` gives
+  exactly `{cosetPoint i j | j : Fin l} = {ω^{i + s*j} | j < l}`.
+
+### `Z` definition
+
+- **Spec** (`kb/glossary.md`, `kb/spec.md`): `Z_i(x) = x^l − ω^{i·l}`.
+- **Lean** (`Dal.Sharding.Z`): `Polynomial.X ^ l - Polynomial.C (ω ^ (i.val * l))`.
+- **Verdict**: Exact match. `Polynomial.X ^ l` evaluates to `x^l`; `Polynomial.C
+  (ω ^ (i.val * l))` is the constant polynomial `ω^{il}`.
+
+### `shardEval` definition
+
+- **Spec** (`kb/spec.md` § Sharding): `shardEval p i j = eval p (cosetPoint i j)`.
+- **Lean** (`Dal.Sharding.shardEval`): `Polynomial.eval (cosetPoint i j) p`.
+- **Verdict**: Exact match. Note: Mathlib's `Polynomial.eval` takes the point
+  first, the polynomial second; the spec uses `eval p x` notation (polynomial
+  first). Semantically identical.
+
+### S3: `vanishing_poly_roots`
+
+- **Spec** (`kb/properties.md` S3): `∀ x, Z i x = 0 ↔ x ∈ Ω i`.
+- **KB target**: `Dal.Sharding.vanishing_poly_roots`.
+- **Lean statement**: `theorem vanishing_poly_roots (i : Fin s) (x : Fr) :
+    Polynomial.eval x (Z i) = 0 ↔ x ∈ Ω i`.
+- **Verdict**: Exact match. Proved without `sorry` using `IsPrimitiveRoot.nthRoots_eq`
+  and `ω_pow_n` for the backward direction.
+- **Status**: `proved`.
+
+### S2: `coset_partition` and `cosets_disjoint`
+
+- **Spec** (`kb/properties.md` S2): `⟨ω⟩ = ⊔ (i : Fin s), Ω i` (disjoint union).
+- **KB target**: `Dal.Sharding.coset_partition`.
+- **Lean statement** (union part): `theorem coset_partition :
+    Finset.image (fun m : Fin n => ω ^ m.val) Finset.univ =
+    (Finset.univ : Finset (Fin s)).biUnion Ω`.
+- **Verdict**: Semantically faithful. The LHS `Finset.image (fun m : Fin n => ω ^ m.val) Finset.univ`
+  is the concrete finset representation of `⟨ω⟩` (the cyclic group generated by ω),
+  since ω is a primitive n-th root of unity and `{ω^m | m < n}` enumerates all
+  group elements without repetition. The RHS `(Finset.univ : Finset (Fin s)).biUnion Ω`
+  is `⊔ (i : Fin s), Ω i`. Match is exact up to representation choice.
+- **Status**: `proved`.
+- **Lean statement** (disjointness part): `theorem cosets_disjoint (i j : Fin s) (hij : i ≠ j) :
+    Disjoint (Ω i) (Ω j)`.
+- **Verdict**: Exact match to spec's "disjoint union" requirement. The proof
+  uses `ω_pow_inj` and integer arithmetic to show distinct coset indices imply
+  disjoint cosets.
+- **Status**: `proved`.
+
+---
 
 ## Coverage Matrix
 
-| Protocol Rule / Property | KB Entry | Lean Theorem | Status |
-|--------------------------|----------|--------------|--------|
+| Protocol Rule / Property | KB Entry | Lean Theorem/Def | Status |
+|--------------------------|----------|------------------|--------|
 | Field `𝔽_r` type | spec.md § Types | `Dal.Field.Fr` | proved |
 | All deployment parameters & constraints | spec.md § Parameters | `Dal.Field.*` | axiom |
 | `ω` primitive root | spec.md § Parameters | `Dal.Field.ω`, `ω_isPrimitiveRoot` | axiom |
 | `Poly` type | spec.md § Types | `Dal.Poly.Poly` | proved |
 | `interpolate` function | spec.md § Functions | `Dal.Poly.interpolate` | proved |
-| A4: Interpolation correctness | properties.md | `Dal.Poly.interpolate_eval`, `interpolate_natDegree` | proved |
+| A4: Interpolation correctness (eval) | properties.md | `Dal.Poly.interpolate_eval` | proved |
+| A4: Interpolation correctness (degree) | properties.md | `Dal.Poly.interpolate_natDegree` | proved |
 | A5: Polynomial uniqueness | properties.md | `Dal.Poly.poly_unique_of_eval` | proved |
 | `G1`, `G2`, `GT` types | spec.md § Types | `Dal.KZG.G1/G2/GT` | axiom |
 | `commit` function | spec.md § Functions | `Dal.KZG.commit` | axiom |
@@ -55,9 +149,21 @@ None.
 | A2: Eval completeness | properties.md | `Dal.KZG.proveEval_complete` | axiom |
 | A3: Degree soundness | properties.md | `Dal.KZG.verifyDegree_soundness` | axiom |
 | A6: Commitment binding | properties.md | `Dal.KZG.commit_binding` | axiom |
+| `cosetPoint` function | spec.md § Sharding | `Dal.Sharding.cosetPoint` | proved |
+| `Ω` (coset finset) | spec.md § Sharding, glossary.md | `Dal.Sharding.Ω` | proved |
+| `Z` (vanishing polynomial) | spec.md § Sharding, glossary.md | `Dal.Sharding.Z` | proved |
+| `shardEval` function | spec.md § Sharding | `Dal.Sharding.shardEval` | proved |
+| S2: Coset partition (union) | properties.md | `Dal.Sharding.coset_partition` | proved |
+| S2: Coset partition (disjoint) | properties.md | `Dal.Sharding.cosets_disjoint` | proved |
+| S3: Vanishing polynomial roots | properties.md | `Dal.Sharding.vanishing_poly_roots` | proved |
+| `shardRemainder` function | spec.md § Sharding | missing | not started |
+| `proveShardEval` function | spec.md § Sharding | missing | not started |
+| `verifyShardEval` function | spec.md § Sharding | missing | not started |
+| `cosetPoints` helper | spec.md § S4 helpers | missing | not started |
+| `shardVals` helper | spec.md § S4 helpers | missing | not started |
+| `rsEncode` function | spec.md § Reed-Solomon | missing | not started |
+| `rsDecode` function | spec.md § Reed-Solomon | missing | not started |
 | P1: RS decoding succeeds | properties.md | missing | not started |
 | P2: Page verification uniqueness | properties.md | missing | not started |
 | S1: Serialization injectivity | properties.md | missing | not started |
-| S2: Coset partition | properties.md | missing | not started |
-| S3: Vanishing polynomial roots | properties.md | missing | not started |
 | S4: Shard recovery (MDS) | properties.md | missing | not started |

@@ -16,8 +16,8 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean`, `Dal/Poly.lean`, and `Dal/KZG.lean` are implemented and build
-clean. All other modules are unstarted. See [gaps.md](gaps.md) for status.
+`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, and `Dal/Sharding.lean` are
+implemented and build clean. All other modules are unstarted. See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Field.lean`
 
@@ -120,7 +120,7 @@ dal/
 ### `Dal/Sharding.lean`
 - Defines `Ω : Fin s → Finset 𝔽_r` (the `s` cosets).
 - Defines `Z : Fin s → Poly` (the vanishing polynomials `Z_i(x) = x^l - ω^{il}`).
-- Defines `shard : Poly → Fin s → Fin l → 𝔽_r` as `eval p (coset_point i j)`.
+- Defines `shardEval : Poly → Fin s → Fin l → 𝔽_r` as `eval p (cosetPoint i j)`.
 - States and proves S2 (coset partition) and S3 (vanishing polynomial roots).
 - References: `Field.lean`, `Poly.lean`.
 

@@ -152,8 +152,8 @@ The evaluation domain partitions into `s` disjoint cosets:
 
 `⟨ω⟩ = ⊔ (i : Fin s), Ω i` (disjoint union)
 
-- **Lean target**: `Dal.Sharding.coset_partition`
-- **Status**: `not started`
+- **Lean targets**: `Dal.Sharding.coset_partition` (union), `Dal.Sharding.cosets_disjoint` (disjointness)
+- **Status**: `proved`
 
 ### S3: Vanishing polynomial roots
 
@@ -162,7 +162,7 @@ The evaluation domain partitions into `s` disjoint cosets:
 `∀ x, Z i x = 0 ↔ x ∈ Ω i`
 
 - **Lean target**: `Dal.Sharding.vanishing_poly_roots`
-- **Status**: `not started`
+- **Status**: `proved`
 
 ### S4: Shard recovery (MDS property)
 
