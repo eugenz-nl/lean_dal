@@ -1,7 +1,7 @@
 ---
 auditor: harness-validator
 date: 2026-03-24
-run: 4
+run: 5
 status: pass
 ---
 
@@ -9,68 +9,47 @@ status: pass
 
 ## Changes since last run
 
-- **Resolved I1**: `dal/Dal/Basic.lean` deleted; no longer present on disk.
+- `Dal/Poly.lean` added; A4 and A5 now `proved` in `kb/properties.md`.
+- `kb/properties.md` and `kb/architecture.md` frontmatter dates updated.
 - No new issues.
 
 ---
 
 ## Broken Links
 
-- [x] All links in `kb/index.md` resolve
-- [x] All links in `kb/spec.md` resolve
-- [x] All links in `kb/glossary.md` resolve
-- [x] All links in `kb/properties.md` resolve
-- [x] All links in `kb/gaps.md` resolve
-- [x] All links in `kb/architecture.md` resolve
-- [x] All links in `kb/decisions/index.md` resolve
+- [x] All links in all KB files resolve
 
 ## Missing Frontmatter
 
-- [x] All KB files have `title`, `last-updated`, `status` fields with current dates
+- [x] All KB files have `title`, `last-updated`, `status` with date 2026-03-24
 
 ## Auditor Coverage
 
-- [x] KB ambiguity → `ambiguity-auditor`
-- [x] Open proof obligations → `sorry-auditor`
-- [x] Spec faithfulness → `spec-compliance-auditor`
-- [x] Meta-check → `harness-validator`
-- [x] All properties (A1–A6, P1–P2, S1–S4) within scope of at least one auditor
+- [x] All four auditors present and covering all properties
 
 ## Ralph Loop Integrity
 
 - [x] `CLAUDE.md` describes the Ralph Loop
-- [x] `CLAUDE.md` references `lake build` as the final validation gate
-- [x] `CLAUDE.md` names all auditor skills explicitly
+- [x] `CLAUDE.md` references `lake build` as the final gate
+- [x] All auditor skills named
 
 ## Decision Index Coverage
 
-- [x] `decisions/001-kzg-axioms.md` — implemented
-- [x] `decisions/002-kzg-over-poly.md` — implemented
-- [x] `decisions/003-field-parameters-as-axioms.md` — implemented
-
-## Skill Consistency
-
-- [x] All five skill files present and consistent
-
-## KB / Docs Alignment
-
-- [x] `kb/spec.md` covers all major sections of `docs/protocol.md`
-- [x] `kb/spec.md` includes S4 helper function definitions
+- [x] ADRs 001, 002, 003 — all `implemented`
 
 ## Gap Tracking
 
-- [x] G1 `in-progress`; `Dal/Field.lean` complete; `Dal/Poly.lean` next
-- [x] G2–G4 tracked as computational axioms
-- [x] G5–G7 tracked as potentially provable
-- [x] Zero `sorry` in Lean files
+- [x] G5 (A4) — `resolved`
+- [x] G6 (A5) — `resolved`
+- [x] G1 — `in-progress`, next task is `Dal/KZG.lean`
+- [x] G2–G4, G7 — tracked as unstarted
+- [x] Zero `sorry` in all Lean files
 - [x] `lake build` passes clean
 
 ## All Clear Items
 
-- [x] Zero sorries in all Lean files
+- [x] Zero sorries in `Dal/Field.lean` and `Dal/Poly.lean`
 - [x] `lake build` passes with zero errors and zero warnings
-- [x] All three ADRs implemented and indexed
-- [x] All deployment parameters and constraints axiomatized in `Dal/Field.lean`
-- [x] S4 helper functions defined in `kb/spec.md`
+- [x] All proved properties updated in `kb/properties.md`
+- [x] `kb/architecture.md` updated with `Dal/Poly.lean` implementation notes
 - [x] All report frontmatter dates current
-- [x] `Dal/Basic.lean` stub removed

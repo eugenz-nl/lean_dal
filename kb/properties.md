@@ -1,6 +1,6 @@
 ---
 title: Properties and Invariants
-last-updated: 2026-03-23
+last-updated: 2026-03-24
 status: draft
 ---
 
@@ -75,21 +75,22 @@ polynomials over finite fields and should be provable using Mathlib. See
 ### A4: Interpolation correctness
 `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
 
-- **Lean target**: `Dal.Poly.interpolate_correct`
+- **Lean targets**: `Dal.Poly.interpolate_eval` (eval part),
+  `Dal.Poly.interpolate_natDegree` (degree part)
 - **Lean form**: `theorem` (proved)
-- **Status**: `not started`
-- **Proof path**: Mathlib's `Polynomial.Lagrange` provides Lagrange interpolation
-  over fields. The correctness statement should follow directly.
+- **Status**: `proved`
+- **Proof**: Via `Lagrange.eval_interpolate_at_node` and
+  `Lagrange.degree_interpolate_lt` from `Mathlib.LinearAlgebra.Lagrange`.
+  Requires `Function.Injective xs` (distinct evaluation points).
 
 ### A5: Polynomial uniqueness from evaluations
 `deg p ≤ d → deg p̃ ≤ d → (∀ i ∈ Fin (d+1), eval p (xs i) = eval p̃ (xs i)) → p = p̃`
 
 - **Lean target**: `Dal.Poly.poly_unique_of_eval`
 - **Lean form**: `theorem` (proved)
-- **Status**: `not started`
-- **Proof path**: A nonzero polynomial of degree `≤ d` has at most `d` roots
-  (Mathlib: `Polynomial.card_roots_le_degree`). If `p - p̃` has `d+1` roots and
-  degree `≤ d`, then `p - p̃ = 0`.
+- **Status**: `proved`
+- **Proof**: Via `Polynomial.eq_of_degrees_lt_of_eval_index_eq` from
+  `Mathlib.LinearAlgebra.Lagrange`. Requires `Function.Injective xs`.
 
 ---
 

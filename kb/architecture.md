@@ -16,7 +16,7 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean` is implemented and builds clean. `Dal/Basic.lean` (stub) remains.
+`Dal/Field.lean` and `Dal/Poly.lean` are implemented and build clean.
 All other modules are unstarted. See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Field.lean`
@@ -30,6 +30,23 @@ All other modules are unstarted. See [gaps.md](gaps.md) for status.
   and avoids a proof that would require significant Mathlib API work.
 - **Mathlib import**: `IsPrimitiveRoot` lives in
   `Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots` (not `.Basic`).
+
+### Implementation notes for `Dal/Poly.lean`
+
+- **Lagrange.interpolate API**: In the `Interpolate` section of
+  `Mathlib.LinearAlgebra.Lagrange`, the section variable `(r : ι → F)` (values
+  function) is the **first explicit argument** to all theorems, before `hvs`
+  (injectivity). Call order: `Lagrange.eval_interpolate_at_node ys hvs hi`.
+- **eq_of_degrees_lt_of_eval_index_eq**: lives in `namespace Polynomial` (not
+  `Lagrange`), in the `Indexed` section where `s : Finset ι` is explicit (first
+  arg). Full name: `Polynomial.eq_of_degrees_lt_of_eval_index_eq`.
+- **dupNamespace linter**: `abbrev Poly` in `namespace Dal.Poly` triggers the
+  `dupNamespace` linter warning; suppressed with
+  `set_option linter.dupNamespace false` at file scope.
+- **`show` vs `change`**: Mathlib's `linter.style.show` warns when `show` changes
+  the goal rather than just annotating it; use `change` or `simp only [...]` to
+  unfold definitions instead.
+- **Mathlib import**: `Mathlib.LinearAlgebra.Lagrange`.
 
 ---
 

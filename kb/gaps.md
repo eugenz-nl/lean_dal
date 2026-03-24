@@ -35,13 +35,14 @@ They must be addressed before the formalization is useful.
 - **Scope**: All modules in `Dal/` (`Field`, `Poly`, `KZG`, `Sharding`,
   `Serialization`, `Protocol`, `Properties`)
 - **Status**: `in-progress`
-- **Completed**: `Dal/Field.lean` — `Fr`, deployment parameters (`r`, `n`,
-  `n_pos`, `n_dvd_r_sub_one`), `ω`, `ω_isPrimitiveRoot`, and three derived
-  theorems (`ω_pow_n`, `ω_orderOf`, `ω_pow_inj`). Builds clean with zero
-  errors and zero `sorry`.
-- **Next task**: Implement `Dal/Poly.lean`, establishing the polynomial type,
-  `eval`, `interpolate`, and proofs of A4 (interpolation correctness) and A5
-  (polynomial uniqueness).
+- **Completed**: `Dal/Field.lean` — `Fr`, all deployment parameters and
+  constraints, `ω`, `ω_isPrimitiveRoot`, and three derived theorems.
+- **Completed**: `Dal/Poly.lean` — `Poly` type alias, `interpolate` (wrapping
+  `Lagrange.interpolate`), `interpolate_eval` (A4 eval), `interpolate_natDegree`
+  (A4 degree), `poly_unique_of_eval` (A5). All proved without `sorry`.
+- **Next task**: Implement `Dal/KZG.lean` — opaque group types, pairing, KZG
+  functions (`commit`, `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree`),
+  and axioms A1, A2, A3, A6.
 
 ---
 
@@ -79,18 +80,18 @@ These may be provable from Mathlib rather than assumed as axioms.
 ### G5: Interpolation correctness (A4)
 
 - **Statement**: `interpolate xs ys = p → deg p ≤ d ∧ ∀ i, eval p (xs i) = ys i`
-- **Lean target**: `Dal.Poly.interpolate_correct`
-- **Status**: `unstarted`
-- **Note**: Mathlib has `Polynomial.Lagrange` — likely provable. Investigate before
-  asserting as axiom.
+- **Lean target**: `Dal.Poly.interpolate_eval`, `Dal.Poly.interpolate_natDegree`
+- **Status**: `resolved`
+- **Note**: Proved using `Lagrange.eval_interpolate_at_node` and
+  `Lagrange.degree_interpolate_lt` from `Mathlib.LinearAlgebra.Lagrange`.
 
 ### G6: Polynomial uniqueness (A5)
 
 - **Statement**: two degree-`≤d` polynomials agreeing on `d+1` points are equal
 - **Lean target**: `Dal.Poly.poly_unique_of_eval`
-- **Status**: `unstarted`
-- **Note**: Follows from `Polynomial.funext` or degree/root counting in Mathlib.
-  Almost certainly provable.
+- **Status**: `resolved`
+- **Note**: Proved using `Polynomial.eq_of_degrees_lt_of_eval_index_eq` from
+  `Mathlib.LinearAlgebra.Lagrange`.
 
 ### G7: Serialization injectivity (S1)
 
