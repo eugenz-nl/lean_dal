@@ -16,9 +16,20 @@ for term definitions.
 
 ## Current state
 
-The Lean project (`dal/`) is a blank slate. Only `Dal/Basic.lean` (a stub) and
-`Dal.lean` (imports `Dal/Basic`) exist. The architecture below is the **plan** for
-the formalization.
+`Dal/Field.lean` is implemented and builds clean. `Dal/Basic.lean` (stub) remains.
+All other modules are unstarted. See [gaps.md](gaps.md) for status.
+
+### Implementation notes for `Dal/Field.lean`
+
+- **Deployment parameters as axioms**: `r`, `n`, `n_pos`, `n_dvd_r_sub_one` are
+  declared as `axiom` (not `variable`) so downstream modules can use bare names
+  without threading them through every signature.
+- **`ω` axiomatized**: the primitive root of unity is declared as `axiom ω : Fr`
+  with `axiom ω_isPrimitiveRoot : IsPrimitiveRoot ω n`. Existence is provable
+  (cyclic group argument) but axiomatizing is consistent with the KZG treatment
+  and avoids a proof that would require significant Mathlib API work.
+- **Mathlib import**: `IsPrimitiveRoot` lives in
+  `Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots` (not `.Basic`).
 
 ---
 
@@ -129,7 +140,7 @@ ReedSolomon    Sharding    Serialization      KZG
 | Polynomial type and `eval` | `Mathlib.RingTheory.Polynomial.Basic` |
 | Lagrange interpolation | `Mathlib.RingTheory.Polynomial.Lagrange` |
 | Finite fields | `Mathlib.FieldTheory.Finite.Basic` |
-| Roots of unity | `Mathlib.RingTheory.RootsOfUnity.Basic` |
+| Roots of unity / `IsPrimitiveRoot` | `Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots` |
 | `ZMod` | `Mathlib.Data.ZMod.Basic` |
 | Finset tools | `Mathlib.Data.Finset.Basic` |
 

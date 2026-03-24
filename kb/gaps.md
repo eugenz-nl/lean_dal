@@ -34,10 +34,14 @@ They must be addressed before the formalization is useful.
 
 - **Scope**: All modules in `Dal/` (`Field`, `Poly`, `KZG`, `Sharding`,
   `Serialization`, `Protocol`, `Properties`)
-- **Status**: `unstarted`
-- **Reason**: Project just initialized; `Dal/Basic.lean` is a stub.
-- **First task**: Implement `Dal/Field.lean` and `Dal/Poly.lean`, establishing
-  basic types and the interpolation axioms (A4, A5).
+- **Status**: `in-progress`
+- **Completed**: `Dal/Field.lean` — `Fr`, deployment parameters (`r`, `n`,
+  `n_pos`, `n_dvd_r_sub_one`), `ω`, `ω_isPrimitiveRoot`, and three derived
+  theorems (`ω_pow_n`, `ω_orderOf`, `ω_pow_inj`). Builds clean with zero
+  errors and zero `sorry`.
+- **Next task**: Implement `Dal/Poly.lean`, establishing the polynomial type,
+  `eval`, `interpolate`, and proofs of A4 (interpolation correctness) and A5
+  (polynomial uniqueness).
 
 ---
 
