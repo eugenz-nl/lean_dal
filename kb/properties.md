@@ -143,8 +143,10 @@ The byte-to-scalar serialization is injective (for fixed DAL parameters).
 `serialize b₁ = serialize b₂ → b₁ = b₂`
 
 - **Lean target**: `Dal.Serialization.serialize_injective`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Source**: `docs/protocol.md` §"Serialize a byte sequence to a scalar array"
+- **Proof**: Via `Fintype.equivFin` injectivity and `ZMod.val_cast_of_lt` (cast to `Fr`
+  is injective for values < `256^31 < r`).
 
 ### S2: Coset partition
 

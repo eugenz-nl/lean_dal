@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-24
-run: 5
+run: 6
 status: 0 untracked, 0 tracked, 0 structural
 ---
 
@@ -9,12 +9,12 @@ status: 0 untracked, 0 tracked, 0 structural
 
 ## Changes since last run
 
-No regressions — zero sorries in run 4, zero sorries in run 5.
+No regressions — zero sorries in run 5, zero sorries in run 6.
 
-One new file has appeared since run 4: `dal/Dal/Sharding.lean`. It implements
-`cosetPoint`, `Ω`, `Z`, `shardEval`, and proves `vanishing_poly_roots` (S3),
-`coset_partition` (S2 union), and `cosets_disjoint` (S2 disjointness). All proofs
-are complete; no sorries.
+One new file has appeared since run 5: `dal/Dal/Serialization.lean`. It implements
+`Bytes`, `byteChunk`, `bytesToFr`, `serialize`, and proves `serialize_injective`
+(S1). All proofs are complete; no sorries. `dal/Dal.lean` has been updated to
+import `Dal.Serialization`.
 
 ## Summary
 
@@ -24,6 +24,7 @@ are complete; no sorries.
 | `dal/Dal/Poly.lean` | 0 | 0 | 0 |
 | `dal/Dal/KZG.lean` | 0 | 0 | 0 |
 | `dal/Dal/Sharding.lean` | 0 | 0 | 0 |
+| `dal/Dal/Serialization.lean` | 0 | 0 | 0 |
 | `dal/Dal.lean` | 0 | 0 | 0 |
 | **Total** | **0** | **0** | **0** |
 
@@ -41,7 +42,7 @@ are complete; no sorries.
 | S2 — coset_partition (union) | `Dal.Sharding.coset_partition` | **resolved** (proved) |
 | S2 — cosets_disjoint | `Dal.Sharding.cosets_disjoint` | **resolved** (proved) |
 | S3 — vanishing_poly_roots | `Dal.Sharding.vanishing_poly_roots` | **resolved** (proved) |
-| G7 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **unstarted** |
+| G7 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **resolved** (proved) |
 | P1 — rs_decoding_succeeds | `Dal.Protocol.rs_decoding_succeeds` | **unstarted** |
 | P2 — page_verification_unique | `Dal.Protocol.page_verification_unique` | **unstarted** |
 | S4 — shard_recovery | `Dal.Protocol.shard_recovery` | **unstarted** |
@@ -52,12 +53,12 @@ The following properties are documented in `kb/properties.md` and `kb/gaps.md` b
 have no Lean file yet. None are expected to have sorries at this stage — they are
 simply unstarted modules.
 
-- **S1** (`Dal.Serialization.serialize_injective`) — needs `Dal/Serialization.lean`
 - **P1** (`Dal.Protocol.rs_decoding_succeeds`) — needs `Dal/Protocol.lean`
 - **P2** (`Dal.Protocol.page_verification_unique`) — needs `Dal/Protocol.lean`
 - **S4** (`Dal.Protocol.shard_recovery`) — needs `Dal/Protocol.lean`
 
 ## Verdict
 
-All clear. The formalization is sorry-free across all five project files.
-Next task: `Dal/Protocol.lean` (P1, P2, S4) or `Dal/Serialization.lean` (S1).
+All clear. The formalization is sorry-free across all six project files.
+G7 (S1 / `serialize_injective`) is now resolved. Next task: `Dal/Protocol.lean`
+(P1, P2, S4).

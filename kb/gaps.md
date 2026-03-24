@@ -48,8 +48,12 @@ They must be addressed before the formalization is useful.
   definitions; `s_mul_l_eq_n`, `l_dvd_n`, `coset_index_lt`, `ωs_isPrimitiveRoot`
   lemmas; `vanishing_poly_roots` (S3), `coset_partition` and `cosets_disjoint`
   (S2). All proved without `sorry`.
-- **Next task**: Implement `Dal/Serialization.lean` — byte-to-scalar serialization
-  bijection and proof of S1 (injectivity).
+- **Completed**: `Dal/Serialization.lean` — `Bytes` type alias, `byteChunk`,
+  `bytesToFr` (via `Fintype.equivFin`), `serialize`; new axioms `slot_size_eq`
+  and `bytes31_lt_r`; `serialize_injective` (S1). All proved without `sorry`.
+- **Next task**: Implement `Dal/ReedSolomon.lean` — `rsEncode`, shard recovery
+  condition, and S4 (MDS property). Alternatively, start `Dal/Protocol.lean`
+  which assembles P1 and P2.
 
 ---
 
@@ -101,10 +105,11 @@ These may be provable from Mathlib rather than assumed as axioms.
 
 - **Statement**: `serialize b₁ = serialize b₂ → b₁ = b₂`
 - **Lean target**: `Dal.Serialization.serialize_injective`
-- **Status**: `unstarted`
-- **Note**: The OCaml reference implementation is given in `docs/protocol.md` §
-  "Serialize a byte sequence". Provable by construction once the Lean encoding is
-  defined.
+- **Status**: `resolved`
+- **Note**: Proved in `Dal/Serialization.lean` via `bytesToFr_injective` (using
+  `Fintype.equivFin` + `ZMod.val_cast_of_lt`) and chunk extraction injectivity.
+  Two supporting axioms added: `slot_size_eq : slot_size = k * 31` and
+  `bytes31_lt_r : 256^31 < r`.
 
 ---
 

@@ -16,8 +16,9 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, and `Dal/Sharding.lean` are
-implemented and build clean. All other modules are unstarted. See [gaps.md](gaps.md) for status.
+`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`, and
+`Dal/Serialization.lean` are implemented and build clean. All other modules are
+unstarted. See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Field.lean`
 
@@ -125,8 +126,13 @@ dal/
 - References: `Field.lean`, `Poly.lean`.
 
 ### `Dal/Serialization.lean`
-- Defines the bijection between `Bytes slot_size` and `Fin k → 𝔽_r`.
-- Proves S1 (injectivity of serialization).
+- Defines `Bytes := Fin slot_size → Fin 256` and `serialize : Bytes → (Fin k → Fr)`.
+- Adds two supporting axioms (beyond those in `Field.lean`):
+  - `slot_size_eq : slot_size = k * 31` — makes the `k ≈ slot_size / 31` approximation exact.
+  - `bytes31_lt_r : 256^31 < r` — holds for BLS12-381 (`r ≈ 2^255 > 2^248`); ensures
+    the cast of a 31-byte chunk to `Fr` does not wrap around.
+- Proves S1 (`serialize_injective`) via `Fintype.equivFin` injectivity and
+  `ZMod.val_cast_of_lt`.
 - The 31-bytes-per-scalar encoding is fixed in this module.
 
 ### `Dal/Protocol.lean`

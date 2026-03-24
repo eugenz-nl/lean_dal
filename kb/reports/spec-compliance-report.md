@@ -1,19 +1,23 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-24
-run: 5
-status: 0 critical, 1 warning, 2 info
+run: 6
+status: 0 critical, 2 warnings, 1 info
 ---
 
 # Spec Compliance Report
 
 ## Changes since last run
 
-- **New coverage**: `Dal/Sharding.lean` implemented: `cosetPoint`, `Ω`, `Z`,
-  `shardEval`, `s_mul_l_eq_n`, `ωs_isPrimitiveRoot`, `vanishing_poly_roots` (S3),
-  `coset_partition` (S2 union), `cosets_disjoint` (S2 disjointness).
-- S2 and S3 are now proved without `sorry`; updated in coverage matrix.
-- `Dal.lean` updated to import `Dal.Sharding`.
+- **New coverage**: `Dal/Serialization.lean` implemented: `Bytes` type, two new
+  axioms (`slot_size_eq`, `bytes31_lt_r`), helper definitions `byteChunk` and
+  `bytesToFr`, serialization function `serialize`, and proof of
+  `serialize_injective` (S1).
+- S1 (`serialize_injective`) is now proved without `sorry`; updated in coverage
+  matrix.
+- `Dal.lean` updated to import `Dal.Serialization`.
+- W1 from run 5 (architecture.md naming stale for `shardEval`) remains open; no
+  action was taken on it since run 5.
 
 ---
 
@@ -28,102 +32,125 @@ None.
 ### [W1] Architecture doc names sharding function `shard`; Lean uses `shardEval`
 
 - **KB location**: `kb/architecture.md` § Dal/Sharding.lean responsibility
-- **Lean location**: `dal/Dal/Sharding.lean` line 79
+- **Lean location**: `dal/Dal/Sharding.lean`
 - **Issue**: `architecture.md` says the sharding module defines
   `shard : Poly → Fin s → Fin l → 𝔽_r`. The Lean file defines `shardEval`
-  instead. `kb/spec.md` § Sharding calls this function `shardEval`, as does
-  `kb/glossary.md` — so the Lean identifier is correct with respect to the
-  authoritative spec. `architecture.md` is stale.
+  instead. `kb/spec.md` § Sharding and `kb/glossary.md` both use `shardEval`
+  — the Lean identifier is correct with respect to the authoritative spec.
+  `architecture.md` is stale.
 - **Action required**: Update `kb/architecture.md` § Dal/Sharding.lean to
-  replace `shard` with `shardEval`.
+  replace `shard` with `shardEval`. (Carried over from run 5.)
+
+### [W2] Two new axioms in `Dal/Serialization.lean` not documented in `kb/spec.md`
+
+- **KB location**: `kb/spec.md` § Parameters (absent)
+- **Lean location**: `dal/Dal/Serialization.lean` lines 50–54
+- **Issue**: `slot_size_eq` (`slot_size = k * 31`) and `bytes31_lt_r`
+  (`256^31 < r`) are declared as Lean `axiom` in `Dal/Serialization.lean`.
+  Neither is listed in `kb/spec.md` § Parameters, which only records the
+  symbolic constraint `k ≈ slot_size / 31` informally. These are new,
+  independently asserted mathematical facts that belong in the KB parameter
+  table.
+  - `slot_size_eq` formalizes the informal `k ≈ slot_size / 31` into an exact
+    equality: `slot_size = k * 31`. This is a strengthening of the spec's
+    informal description and should be recorded as a parameter constraint.
+  - `bytes31_lt_r` (`256^31 < r`) is a numerical fact about BLS12-381 that is
+    not mentioned anywhere in the KB. It is true (BLS12-381 has `r ≈ 2^255 >
+    2^248 = 256^31`), used to ensure no wrap-around in the `Nat → Fr` cast, and
+    is a legitimate axiom for this deployment. It should be added to the KB.
+- **Severity**: Warning — the axioms are mathematically sound and consistent
+  with the protocol, but they represent KB coverage gaps. The spec.md parameter
+  table and/or a `decisions/` file should document them so that future agents
+  know these are intentional constraints, not oversights.
+- **Action required**:
+  1. Add `slot_size_eq` as a formal parameter constraint to `kb/spec.md`
+     § Parameters: "`slot_size = k * 31` (exact equality, not just
+     approximation)".
+  2. Add `bytes31_lt_r` to `kb/spec.md` § Parameters or a note in
+     `kb/architecture.md` § Dal/Serialization.lean: "`256^31 < r` (holds for
+     BLS12-381 since `r ≈ 2^255`)".
 
 ---
 
 ## Info
 
-### [I1] P1, P2, S1, S4 still `not started`
+### [I1] P1, P2, S4 still `not started`; S1 now resolved
 
 - **KB location**: `kb/properties.md`
-- **Lean location**: missing (`Dal/Protocol.lean`, `Dal/Properties.lean`,
-  `Dal/Serialization.lean`, `Dal/ReedSolomon.lean` not yet written)
-- **Issue**: Expected at this stage. None of these depend on `Dal/Sharding.lean`
-  being absent; they require the next modules in the dependency chain.
-
-### [I2] Sharding spec functions `shardRemainder`, `proveShardEval`, `verifyShardEval`, `cosetPoints`, `shardVals` not yet in Lean
-
-- **KB location**: `kb/spec.md` § Sharding and § S4 helper functions
-- **Lean location**: missing
-- **Issue**: Expected. These belong in `Dal/Protocol.lean` or a future
-  `Dal/ReedSolomon.lean`. They are not needed for S2/S3 but are required for
-  S4 and the multi-reveal correctness proofs.
+- **Lean location**: missing (`Dal/Protocol.lean` not yet written)
+- **Issue**: Expected at this stage. P1, P2, and S4 require `Dal/Protocol.lean`
+  which has not been written. S1 (`serialize_injective`) is now resolved as of
+  this run.
 
 ---
 
-## Sharding Module Compliance (Dal/Sharding.lean) — Detailed
+## Serialization Module Compliance (Dal/Serialization.lean) — Detailed
 
 This section provides the focused comparison requested for the newly implemented
-sharding module.
+serialization module.
 
-### `cosetPoint` definition
+### `Bytes` type
 
-- **Spec** (`kb/spec.md` § Sharding): `cosetPoint i j = ω^(i + s*j)`, i.e.,
-  `ω^i · (ω^s)^j`.
-- **Lean** (`Dal.Sharding.cosetPoint`): `ω ^ (i.val + s * j.val)`.
-- **Verdict**: Exact match. The exponent `i.val + s * j.val` equals `i + s*j`
-  for `i : Fin s`, `j : Fin l` with `.val` coercions.
+- **Spec** (`kb/architecture.md` § Dal/Serialization.lean): "Defines the
+  bijection between `Bytes slot_size` and `Fin k → 𝔽_r`."
+- **Spec** (`kb/spec.md` data flow): "RAW BYTES (slot_size bytes) → serialize:
+  31 bytes → 1 scalar".
+- **Lean** (`Dal.Serialization.Bytes`): `abbrev Bytes := Fin slot_size → Fin 256`.
+- **Verdict**: Correct. `Fin slot_size → Fin 256` represents a sequence of
+  `slot_size` bytes (each byte valued 0–255 = `Fin 256`). This matches the
+  protocol's byte array model. The glossary entry for "Slot" says "a raw byte
+  sequence of fixed size `slot_size`"; this type captures that exactly.
 
-### `Ω` definition
+### `slot_size_eq` axiom
 
-- **Spec** (`kb/glossary.md`): `Ω_i = {ω^{i + s·j} : j = 0, …, l−1}`.
-- **Lean** (`Dal.Sharding.Ω`): `Finset.image (cosetPoint i) Finset.univ` where
-  `Finset.univ : Finset (Fin l)`.
-- **Verdict**: Exact match. The image of `Fin l` under `cosetPoint i` gives
-  exactly `{cosetPoint i j | j : Fin l} = {ω^{i + s*j} | j < l}`.
+- **Spec** (`kb/spec.md` § Parameters): "`k ≈ slot_size / 31`" (informal).
+- **Lean** (`Dal.Serialization.slot_size_eq`): `axiom slot_size_eq : slot_size = k * 31`.
+- **Verdict**: Consistent with spec intent. The informal approximation is
+  formalized as an exact equality. The spec's `≈` is a prose shorthand for the
+  deployed configuration; `slot_size = k * 31` is the correct mathematical
+  constraint. **Flag**: Not yet in `kb/spec.md` as a formal constraint — see
+  W2 above.
 
-### `Z` definition
+### `bytes31_lt_r` axiom
 
-- **Spec** (`kb/glossary.md`, `kb/spec.md`): `Z_i(x) = x^l − ω^{i·l}`.
-- **Lean** (`Dal.Sharding.Z`): `Polynomial.X ^ l - Polynomial.C (ω ^ (i.val * l))`.
-- **Verdict**: Exact match. `Polynomial.X ^ l` evaluates to `x^l`; `Polynomial.C
-  (ω ^ (i.val * l))` is the constant polynomial `ω^{il}`.
+- **Spec**: Not mentioned in any KB file.
+- **Lean** (`Dal.Serialization.bytes31_lt_r`): `axiom bytes31_lt_r : 256^31 < r`.
+- **Verdict**: Mathematically necessary for the injectivity proof. The axiom
+  ensures that a 31-byte integer never exceeds the field modulus, so the
+  `Nat → Fr = ZMod r` cast is injective on the relevant range. True for
+  BLS12-381 (`r ≈ 2^255`, `256^31 = 2^248`). **Flag**: Undocumented in KB —
+  see W2 above.
 
-### `shardEval` definition
+### `serialize` function
 
-- **Spec** (`kb/spec.md` § Sharding): `shardEval p i j = eval p (cosetPoint i j)`.
-- **Lean** (`Dal.Sharding.shardEval`): `Polynomial.eval (cosetPoint i j) p`.
-- **Verdict**: Exact match. Note: Mathlib's `Polynomial.eval` takes the point
-  first, the polynomial second; the spec uses `eval p x` notation (polynomial
-  first). Semantically identical.
+- **Spec** (`kb/spec.md` § Data flow): "serialize: 31 bytes → 1 scalar; pad to
+  k scalars".
+- **Spec** (`kb/spec.md` § Functions): Implied by the data flow; not given an
+  explicit function entry.
+- **Lean** (`Dal.Serialization.serialize`):
+  `noncomputable def serialize (b : Bytes) : Fin k → Fr := fun i => bytesToFr (byteChunk b i)`.
+- **Verdict**: Matches spec intent. The function splits `slot_size = k * 31`
+  bytes into `k` consecutive 31-byte chunks (`byteChunk`) and encodes each
+  chunk as a field element (`bytesToFr`). The encoding uses `Fintype.equivFin`
+  to obtain a canonical bijection from `(Fin 31 → Fin 256)` to `Fin (256^31)`,
+  then casts the natural number index to `Fr`. This is mathematically equivalent
+  to little-endian base-256 encoding; the OCaml reference implementation's index
+  permutation (`elt * pages_per_slot + page`) is a bijection on indices that
+  does not affect injectivity. The module header documents this design choice
+  explicitly.
 
-### S3: `vanishing_poly_roots`
+### `serialize_injective` (S1)
 
-- **Spec** (`kb/properties.md` S3): `∀ x, Z i x = 0 ↔ x ∈ Ω i`.
-- **KB target**: `Dal.Sharding.vanishing_poly_roots`.
-- **Lean statement**: `theorem vanishing_poly_roots (i : Fin s) (x : Fr) :
-    Polynomial.eval x (Z i) = 0 ↔ x ∈ Ω i`.
-- **Verdict**: Exact match. Proved without `sorry` using `IsPrimitiveRoot.nthRoots_eq`
-  and `ω_pow_n` for the backward direction.
-- **Status**: `proved`.
-
-### S2: `coset_partition` and `cosets_disjoint`
-
-- **Spec** (`kb/properties.md` S2): `⟨ω⟩ = ⊔ (i : Fin s), Ω i` (disjoint union).
-- **KB target**: `Dal.Sharding.coset_partition`.
-- **Lean statement** (union part): `theorem coset_partition :
-    Finset.image (fun m : Fin n => ω ^ m.val) Finset.univ =
-    (Finset.univ : Finset (Fin s)).biUnion Ω`.
-- **Verdict**: Semantically faithful. The LHS `Finset.image (fun m : Fin n => ω ^ m.val) Finset.univ`
-  is the concrete finset representation of `⟨ω⟩` (the cyclic group generated by ω),
-  since ω is a primitive n-th root of unity and `{ω^m | m < n}` enumerates all
-  group elements without repetition. The RHS `(Finset.univ : Finset (Fin s)).biUnion Ω`
-  is `⊔ (i : Fin s), Ω i`. Match is exact up to representation choice.
-- **Status**: `proved`.
-- **Lean statement** (disjointness part): `theorem cosets_disjoint (i j : Fin s) (hij : i ≠ j) :
-    Disjoint (Ω i) (Ω j)`.
-- **Verdict**: Exact match to spec's "disjoint union" requirement. The proof
-  uses `ω_pow_inj` and integer arithmetic to show distinct coset indices imply
-  disjoint cosets.
-- **Status**: `proved`.
+- **Spec** (`kb/properties.md` S1): `serialize b₁ = serialize b₂ → b₁ = b₂`.
+- **Lean target** (`kb/properties.md`): `Dal.Serialization.serialize_injective`.
+- **Lean statement**: `theorem serialize_injective : Function.Injective serialize`.
+- **Lean proof**: Complete (no `sorry`). Proof proceeds via:
+  1. `bytesToFr_injective` reduces the goal to chunk equality;
+  2. `reindex` lemma uses Euclidean division (`31 * (m/31) + m%31 = m`) to map
+     every byte position back to its chunk, completing the proof by `ext`.
+- **Verdict**: Exact statement match to `kb/properties.md` S1. Proof strategy
+  (injectivity through chunk encoding, then byte reindexing) is sound. Status
+  updated to **proved**.
 
 ---
 
@@ -156,6 +183,9 @@ sharding module.
 | S2: Coset partition (union) | properties.md | `Dal.Sharding.coset_partition` | proved |
 | S2: Coset partition (disjoint) | properties.md | `Dal.Sharding.cosets_disjoint` | proved |
 | S3: Vanishing polynomial roots | properties.md | `Dal.Sharding.vanishing_poly_roots` | proved |
+| `Bytes` type | architecture.md § Serialization | `Dal.Serialization.Bytes` | proved |
+| `serialize` function | spec.md § Data flow | `Dal.Serialization.serialize` | proved |
+| S1: Serialization injectivity | properties.md | `Dal.Serialization.serialize_injective` | proved |
 | `shardRemainder` function | spec.md § Sharding | missing | not started |
 | `proveShardEval` function | spec.md § Sharding | missing | not started |
 | `verifyShardEval` function | spec.md § Sharding | missing | not started |
@@ -165,5 +195,4 @@ sharding module.
 | `rsDecode` function | spec.md § Reed-Solomon | missing | not started |
 | P1: RS decoding succeeds | properties.md | missing | not started |
 | P2: Page verification uniqueness | properties.md | missing | not started |
-| S1: Serialization injectivity | properties.md | missing | not started |
 | S4: Shard recovery (MDS) | properties.md | missing | not started |

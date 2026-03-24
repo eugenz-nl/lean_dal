@@ -1,21 +1,26 @@
 ---
 auditor: harness-validator
 date: 2026-03-24
-run: 7
-status: pass (1 warning, 1 info)
+run: 8
+status: pass (2 warnings, 1 info)
 ---
 
 # Harness Validation Report
 
 ## Changes since last run
 
-- `Dal/Sharding.lean` added since run 6: `cosetPoint`, `Ω`, `Z`, `shardEval`,
-  `vanishing_poly_roots` (S3), `coset_partition` and `cosets_disjoint` (S2). All
-  proved without `sorry`.
-- `kb/properties.md` S2 and S3 status updated to `proved` (not reflected in run 6).
-- spec-compliance-report (run 5) records one open warning [W1]: stale `shard` name
-  in `architecture.md`. This carries forward as a harness warning below.
-- No new infrastructure gaps.
+- `Dal/Serialization.lean` added since run 7: `Bytes` type, `slot_size_eq` and
+  `bytes31_lt_r` axioms, `byteChunk`, `bytesToFr`, `serialize`, and
+  `serialize_injective` (S1). All proved without `sorry`. Zero sorries.
+- `kb/properties.md` S1 status not yet updated (still `not started`) — carried
+  forward as [W3] below.
+- `kb/gaps.md` G1 "Next task" and G7 not yet updated — carried forward.
+- `kb/architecture.md` "Current state" does not mention Serialization — new [W4].
+- Two new axioms (`slot_size_eq`, `bytes31_lt_r`) are not registered in
+  `kb/spec.md` — new [W3] (see ambiguity-report W5 for detail).
+- Stale identifier warning W2 from run 7 (`shard` vs `shardEval`) is unresolved
+  and carries forward.
+- `last-updated` staleness warning W1 from run 7 carries forward.
 
 ---
 
@@ -26,19 +31,15 @@ status: pass (1 warning, 1 info)
   `decisions/index.md`
 - [x] All 3 ADRs linked from `decisions/index.md` exist:
   `001-kzg-axioms.md`, `002-kzg-over-poly.md`, `003-field-parameters-as-axioms.md`
-- [x] All cross-references within KB files (spec ↔ glossary ↔ properties ↔ architecture
-  ↔ gaps ↔ decisions) resolve correctly
+- [x] All cross-references within KB files resolve correctly
 
 ## Missing Frontmatter
 
 - [x] All KB files have `title`, `last-updated`, `status` fields
 - [x] All KB frontmatter `status` values are valid (`draft` or `implemented`)
 - [ ] **[W1] Stale `last-updated` in 3 KB files**: `kb/index.md`, `kb/spec.md`,
-  `kb/glossary.md` still carry `last-updated: 2026-03-23`. These files were not
-  modified since their initial bootstrap, so the date is technically accurate.
-  However `kb/index.md` should be bumped when any KB file is updated. Low urgency.
-  **Recommendation**: Update `last-updated` to `2026-03-24` in these three files on
-  the next substantive KB edit.
+  `kb/glossary.md` still carry `last-updated: 2026-03-23`. Low urgency.
+  **Recommendation**: Bump to `2026-03-24` on the next substantive KB edit.
 
 ## Auditor Coverage
 
@@ -71,7 +72,6 @@ status: pass (1 warning, 1 info)
 ## KB / Docs Alignment
 
 - [x] `kb/spec.md` exists and explicitly references `docs/protocol.md` as its source
-  (first paragraph: "Source: `docs/protocol.md`")
 - [x] The following `docs/protocol.md` sections are covered by the KB:
   - §Reed-Solomon erasure codes → `kb/spec.md` § Reed-Solomon, `kb/properties.md` S4
   - §KZG polynomial commitment scheme → `kb/spec.md` § KZG, `kb/properties.md` A1–A6
@@ -88,36 +88,48 @@ status: pass (1 warning, 1 info)
 
 ## KB / Architecture Alignment
 
-- [ ] **[W2] `kb/architecture.md` line 123 uses stale identifier `shard`**: The
+- [ ] **[W2] `kb/architecture.md` uses stale identifier `shard`**: The
   `Dal/Sharding.lean` module description reads `Defines shard : Poly → Fin s → Fin l → 𝔽_r`
-  but the implemented and spec-correct name is `shardEval`. This was flagged as W1
-  in spec-compliance-report run 5 and is unresolved.
+  but the implemented and spec-correct name is `shardEval`. Unresolved since run 5.
   **Recommendation**: Update `kb/architecture.md` § Dal/Sharding.lean to replace
-  `shard` with `shardEval`.
+  `shard` with `shardEval` and `coset_point` with `cosetPoint`.
+- [ ] **[W3] Two new `Dal/Serialization.lean` axioms not registered in KB**:
+  `slot_size_eq` (`slot_size = k * 31`) and `bytes31_lt_r` (`256^31 < r`) are
+  declared as `axiom` in Lean but appear nowhere in `kb/spec.md` Parameters or
+  `kb/architecture.md` § Dal/Serialization.lean. `kb/spec.md` only has the
+  approximation `k ≈ slot_size / 31`.
+  **Recommendation**:
+  - Sharpen `kb/spec.md` § Parameters to state `slot_size = k * 31` exactly.
+  - Add `256^31 < r` as a parameter constraint in `kb/spec.md`.
+  - Name both axioms in `kb/architecture.md` § Dal/Serialization.lean.
+- [ ] **[W4] `kb/architecture.md` "Current state" omits `Dal/Serialization.lean`**:
+  The section currently reads "Dal/Field.lean, Dal/Poly.lean, Dal/KZG.lean, and
+  Dal/Sharding.lean are implemented and build clean." `Dal/Serialization.lean` is
+  now also complete.
+  **Recommendation**: Add `Dal/Serialization.lean` to the "Current state" sentence.
 
 ## Gap Tracking
 
 - [x] Zero `sorry` / `admit` occurrences in all Lean files
-  (`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`, `Dal.lean`)
+  (`Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
+  `Dal/Serialization.lean`, `Dal.lean`)
 - [x] `kb/gaps.md` exists and tracks all open obligations
-- [x] `kb/properties.md` has an open obligations section ("Main theorems to be proved",
-  "Structural / well-formedness properties") with `not started` items clearly identified
-- [x] Gap status is current:
-  - G1 `in-progress` — next task `Dal/Sharding.lean` now `completed`; entry should
-    be updated to reflect this and name the new next task (`Dal/Protocol.lean` or
-    `Dal/Serialization.lean`)
-  - G2–G6 `resolved`
-  - G7 `unstarted`
-- [ ] **[I2] `kb/gaps.md` G1 next-task pointer is stale**: G1 still reads "Next task:
-  Implement `Dal/Sharding.lean`" but `Dal/Sharding.lean` is now complete. The next
-  task is `Dal/Protocol.lean` (P1, P2, S4) or `Dal/Serialization.lean` (S1).
-  **Recommendation**: Update G1 in `kb/gaps.md` to reflect Sharding completion and
-  point to the next module.
+- [x] `kb/properties.md` has an open obligations section with `not started` items
+  clearly identified
+- [ ] **Gap status stale** after Serialization completion:
+  - G1 `in-progress`: "Next task" pointer reads "Implement `Dal/Serialization.lean`"
+    but that module is now complete. Entry should be updated to reflect completion
+    and name the next task (`Dal/Protocol.lean` or `Dal/ReedSolomon.lean`).
+  - G7 `unstarted`: `serialize_injective` (S1) is now proved. Status should be
+    `resolved`.
+  - `kb/properties.md` S1 status reads `not started` but S1 is proved as
+    `Dal.Serialization.serialize_injective`.
+  **Recommendation**: Update G1, G7, and `properties.md` S1 on the next KB update.
 
 ## `lake build` Gate
 
-- [x] `lake build` passes with zero errors and zero warnings (confirmed by run 6
-  harness-report and sorry-report run 5)
+- [x] `lake build` passes with zero errors and zero warnings (confirmed by
+  sorry-report run 7 and the Serialization implementation being zero-sorry)
 
 ---
 
@@ -137,11 +149,14 @@ status: pass (1 warning, 1 info)
 - [x] `kb/gaps.md` exists and all sorry obligations are tracked
 - [x] ADRs 001, 002, 003 — all `implemented`
 
+---
+
 ## Issues Requiring Action
 
 | ID | Severity | Description | Action |
 |----|----------|-------------|--------|
-| W2 | Warning | `architecture.md` names `shard` instead of `shardEval` in Dal/Sharding.lean description | Update `kb/architecture.md` line 123 |
+| W2 | Warning | `architecture.md` names `shard` instead of `shardEval` in Dal/Sharding.lean description | Update `kb/architecture.md` |
+| W3 | Warning | `slot_size_eq` and `bytes31_lt_r` axioms not registered in `kb/spec.md` or `kb/architecture.md` | Add constraints to spec.md Parameters; name axioms in architecture.md §Serialization |
+| W4 | Warning | `kb/architecture.md` "Current state" omits `Dal/Serialization.lean` | Update "Current state" sentence |
 | W1 | Warning | `last-updated` date stale in `kb/index.md`, `kb/spec.md`, `kb/glossary.md` | Bump on next substantive KB edit |
-| I2 | Info | `kb/gaps.md` G1 next-task pointer still says "Implement Dal/Sharding.lean" | Update G1 to reflect completion; point to next module |
 | I1 | Info | Several `docs/protocol.md` sections have no KB coverage | Already tracked in `kb/gaps.md`; no further action |

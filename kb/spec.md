@@ -49,6 +49,9 @@ Constraints:
 - `d ≥ 2l` (required by the multi-reveal proof construction; see
   `docs/protocol.md` §Multiple multi-reveals)
 - `l ∣ k` (so that `k / l` shards suffice for reconstruction; needed for S4)
+- `slot_size = k * 31` (exact serialization constraint; formalizes `k ≈ slot_size / 31`)
+- `256^31 < r` (BLS12-381 guarantee: a 31-byte chunk fits in one field element without
+  wrap-around; `r ≈ 2^255 > 256^31 = 2^248`)
 
 **Page parameters** (used for L1 verification; out of scope for the initial
 formalization but included for completeness):
