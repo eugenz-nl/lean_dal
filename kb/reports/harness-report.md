@@ -1,7 +1,7 @@
 ---
 auditor: harness-validator
 date: 2026-03-24
-run: 5
+run: 6
 status: pass
 ---
 
@@ -9,8 +9,10 @@ status: pass
 
 ## Changes since last run
 
-- `Dal/Poly.lean` added; A4 and A5 now `proved` in `kb/properties.md`.
-- `kb/properties.md` and `kb/architecture.md` frontmatter dates updated.
+- `Dal/KZG.lean` added; A1–A3, A6 now `axiom (declared)` in `kb/properties.md`.
+- `kb/architecture.md` updated with KZG implementation notes.
+- `kb/decisions/001-kzg-axioms.md` corrected: four axioms (A1, A2, A3, A6), not three.
+- `kb/gaps.md`: G2–G4 resolved; G1 in-progress; next task `Dal/Sharding.lean`.
 - No new issues.
 
 ---
@@ -41,15 +43,17 @@ status: pass
 
 - [x] G5 (A4) — `resolved`
 - [x] G6 (A5) — `resolved`
-- [x] G1 — `in-progress`, next task is `Dal/KZG.lean`
-- [x] G2–G4, G7 — tracked as unstarted
+- [x] G2 (A6), G3 (A1), G4 (A3) — `resolved` (axiom)
+- [x] G1 — `in-progress`, next task is `Dal/Sharding.lean`
+- [x] G7 — `unstarted`
 - [x] Zero `sorry` in all Lean files
 - [x] `lake build` passes clean
 
 ## All Clear Items
 
-- [x] Zero sorries in `Dal/Field.lean` and `Dal/Poly.lean`
+- [x] Zero sorries in `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`
 - [x] `lake build` passes with zero errors and zero warnings
-- [x] All proved properties updated in `kb/properties.md`
-- [x] `kb/architecture.md` updated with `Dal/Poly.lean` implementation notes
+- [x] All proved/axiomatized properties updated in `kb/properties.md`
+- [x] `kb/architecture.md` updated with KZG implementation notes
+- [x] `kb/decisions/001-kzg-axioms.md` corrected to four axioms
 - [x] All report frontmatter dates current

@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-24
-run: 3
+run: 4
 status: 0 untracked, 0 tracked, 0 structural
 ---
 
@@ -9,8 +9,8 @@ status: 0 untracked, 0 tracked, 0 structural
 
 ## Changes since last run
 
-No changes — zero sorries in run 2, zero sorries in run 3.
-`Dal/Poly.lean` added with three proved theorems; no sorries used.
+No changes — zero sorries in run 3, zero sorries in run 4.
+`Dal/KZG.lean` added with four `axiom` declarations and no proofs; no sorries.
 
 ## Summary
 
@@ -18,17 +18,20 @@ No changes — zero sorries in run 2, zero sorries in run 3.
 |------|-----------|---------|------------|
 | `dal/Dal/Field.lean` | 0 | 0 | 0 |
 | `dal/Dal/Poly.lean` | 0 | 0 | 0 |
+| `dal/Dal/KZG.lean` | 0 | 0 | 0 |
 | **Total** | **0** | **0** | **0** |
 
 ## KB obligation cross-check
 
 | KB entry | Lean target | Status |
 |----------|-------------|--------|
-| G5 — interpolation correctness (A4) | `Dal.Poly.interpolate_eval`, `Dal.Poly.interpolate_natDegree` | **resolved** |
-| G6 — polynomial uniqueness (A5) | `Dal.Poly.poly_unique_of_eval` | **resolved** |
-| G1 (partial) — `Dal/KZG.lean` | — | unstarted, next task |
-| G2–G4 | `Dal.KZG.*` | unstarted (will be axioms) |
-| G7 | `Dal.Serialization.serialize_injective` | unstarted |
-| A1–A3, A6, P1–P2, S1–S4 | various | unstarted |
+| G2 — commit_binding (A6) | `Dal.KZG.commit_binding` | **resolved** (axiom) |
+| G3 — verifyEval_soundness (A1) | `Dal.KZG.verifyEval_soundness` | **resolved** (axiom) |
+| G4 — verifyDegree_soundness (A3) | `Dal.KZG.verifyDegree_soundness` | **resolved** (axiom) |
+| A2 — proveEval_complete | `Dal.KZG.proveEval_complete` | **resolved** (axiom) |
+| G1 (partial) — `Dal/Sharding.lean` | — | unstarted, next task |
+| G7 — serialize_injective | `Dal.Serialization.serialize_injective` | unstarted |
+| P1, P2 | `Dal.Protocol.*` | unstarted |
+| S1–S4 | various | unstarted |
 
-All clear. No action required.
+All clear.

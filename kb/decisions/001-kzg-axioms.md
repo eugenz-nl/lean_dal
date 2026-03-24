@@ -41,7 +41,9 @@ from first principles in Lean.
 
 ## Consequences
 
-- The `Dal/KZG.lean` module will contain exactly three `axiom` declarations: A1, A3, A6.
+- The `Dal/KZG.lean` module contains four `axiom` declarations: A1, A2, A3, A6.
+  *(Note: the original decision text said "exactly three"; A2 was overlooked.
+  Since `proveEval` is opaque, A2 cannot be proved and must also be an axiom.)*
 - The soundness of P1 and P2 is conditional on these axioms.
 - Any future work that eliminates these axioms (e.g., by importing a verified
   cryptography library) can do so by replacing the axiom declarations with theorems.

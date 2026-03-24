@@ -40,9 +40,12 @@ They must be addressed before the formalization is useful.
 - **Completed**: `Dal/Poly.lean` — `Poly` type alias, `interpolate` (wrapping
   `Lagrange.interpolate`), `interpolate_eval` (A4 eval), `interpolate_natDegree`
   (A4 degree), `poly_unique_of_eval` (A5). All proved without `sorry`.
-- **Next task**: Implement `Dal/KZG.lean` — opaque group types, pairing, KZG
-  functions (`commit`, `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree`),
-  and axioms A1, A2, A3, A6.
+- **Completed**: `Dal/KZG.lean` — `G1`, `G2`, `GT` opaque types; `commit`,
+  `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree` as axioms; security
+  axioms A1 (`verifyEval_soundness`), A2 (`proveEval_complete`), A3
+  (`verifyDegree_soundness`), A6 (`commit_binding`). Zero sorry.
+- **Next task**: Implement `Dal/Sharding.lean` — coset definitions, vanishing
+  polynomials, `shardEval`, and proofs of S2 and S3.
 
 ---
 
@@ -54,22 +57,19 @@ These will never be proved — they are asserted as Lean `axiom` declarations.
 
 - **Statement**: `commit p = commit q → p = q`
 - **Lean target**: `Dal.KZG.commit_binding`
-- **Status**: `unstarted` (will be `axiom`)
-- **Reason**: Binding is computational (d-strong Diffie-Hellman assumption), not a
-  theorem of pure mathematics. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+- **Status**: `resolved` (declared as `axiom`)
 
 ### G3: Eval soundness (A1)
 
-- **Statement**: `verifyEval x y c π = true → ∃ p, commit p = c ∧ …`
+- **Statement**: `verifyEval x y c π = true → ∃ p, commit p = c ∧ proveEval p x y = some π`
 - **Lean target**: `Dal.KZG.verifyEval_soundness`
-- **Status**: `unstarted` (will be `axiom`)
-- **Reason**: KZG soundness rests on the hardness of the discrete logarithm problem.
+- **Status**: `resolved` (declared as `axiom`)
 
 ### G4: Degree soundness (A3)
 
-- **Statement**: `verifyDegree c d π = true → ∃ p, …`
+- **Statement**: `verifyDegree c bound π = true → ∃ p, commit p = c ∧ p.natDegree ≤ bound ∧ proveDegree p bound = some π`
 - **Lean target**: `Dal.KZG.verifyDegree_soundness`
-- **Status**: `unstarted` (will be `axiom`)
+- **Status**: `resolved` (declared as `axiom`)
 
 ---
 

@@ -16,8 +16,8 @@ for term definitions.
 
 ## Current state
 
-`Dal/Field.lean` and `Dal/Poly.lean` are implemented and build clean.
-All other modules are unstarted. See [gaps.md](gaps.md) for status.
+`Dal/Field.lean`, `Dal/Poly.lean`, and `Dal/KZG.lean` are implemented and build
+clean. All other modules are unstarted. See [gaps.md](gaps.md) for status.
 
 ### Implementation notes for `Dal/Field.lean`
 
@@ -47,6 +47,20 @@ All other modules are unstarted. See [gaps.md](gaps.md) for status.
   the goal rather than just annotating it; use `change` or `simp only [...]` to
   unfold definitions instead.
 - **Mathlib import**: `Mathlib.LinearAlgebra.Lagrange`.
+
+### Implementation notes for `Dal/KZG.lean`
+
+- **Four axioms, not three**: `spec.md` and `properties.md` both list A2 as an
+  axiom. Decision 001's "exactly three" was an oversight; `Dal/KZG.lean` declares
+  A1, A2, A3, A6. Decision 001 has been updated accordingly.
+- **A2 statement**: `(∃ π, proveEval p x y = some π) ↔ Polynomial.eval x p = y`
+  (existential on the left, since the specific proof value is immaterial).
+- **A1 statement**: uses `proveEval p x y = some π` (not `π = proveEval p x y`)
+  since `proveEval` returns `Option G1`.
+- **No group structure needed**: `G1`, `G2`, `GT` are bare types. Group operations
+  are internal to the opaque KZG functions and not needed for the axiom statements.
+- **No Mathlib import needed**: `Dal/KZG.lean` imports only `Dal.Field` and
+  `Dal.Poly`.
 
 ---
 

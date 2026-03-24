@@ -34,34 +34,36 @@ is a computational hardness assumption and cannot be proved in pure mathematics.
 See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 ### A1: Eval soundness
-`verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
+`verifyEval x y c π = true → ∃ p, commit p = c ∧ proveEval p x y = some π`
 
 - **Lean target**: `Dal.KZG.verifyEval_soundness`
 - **Lean form**: `axiom`
-- **Status**: `not started`
+- **Status**: `axiom` (declared)
 
 ### A2: Eval completeness
-`proveEval p x y = some π ↔ eval p x = y`
+`(∃ π, proveEval p x y = some π) ↔ Polynomial.eval x p = y`
 
 - **Lean target**: `Dal.KZG.proveEval_complete`
 - **Lean form**: `axiom`
-- **Status**: `not started`
+- **Status**: `axiom` (declared)
+- **Note**: Decision 001 lists only A1, A3, A6 as axioms but omits A2; this is
+  an oversight. Since `proveEval` is opaque, A2 must also be axiomatized.
+  Decision 001 should be updated to reflect this.
 
 ### A3: Degree soundness
-`verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
+`verifyDegree c bound π = true → ∃ p, commit p = c ∧ p.natDegree ≤ bound ∧ proveDegree p bound = some π`
 
 - **Lean target**: `Dal.KZG.verifyDegree_soundness`
 - **Lean form**: `axiom`
-- **Status**: `not started`
+- **Status**: `axiom` (declared)
 
 ### A6: Commitment binding
-`commit p = commit p̃ → p = p̃`
+`commit p = commit q → p = q`
 
 - **Lean target**: `Dal.KZG.commit_binding`
 - **Lean form**: `axiom`
-- **Status**: `not started`
-- **Note**: Technically false in pure math (two distinct polynomials can share a
-  commitment with negligible probability); true under `d`-SDH. See
+- **Status**: `axiom` (declared)
+- **Note**: Technically false in pure math; true under `d`-SDH. See
   [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 ---
