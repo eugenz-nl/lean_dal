@@ -20,6 +20,18 @@ for term definitions.
 `Dal/Serialization.lean` are implemented and build clean. All other modules are
 unstarted. See [gaps.md](gaps.md) for status.
 
+### Implementation notes for `Dal/Serialization.lean`
+
+- **`slot_size_le` not `slot_size_eq`**: The axiom is `slot_size ≤ k * 31` (not equality),
+  because the real Tezos deployment has `slot_size = 380832 = 31 × 12284 + 28`.
+- **`byteAt` is `noncomputable`**: it depends on the axiom `slot_size`, which is not
+  computable. `byteChunk` is also `noncomputable` by transitivity.
+- **`byteAt_eq` simp lemma**: `byteAt b m = b ⟨m, h⟩` when `h : m < slot_size`; proved
+  via `dif_pos h`. Used in `serialize_injective` to bridge the padding/non-padding cases.
+- **`reindex` step in `serialize_injective`**: uses `show` to expose the concrete `byteAt`
+  form (since `byteChunk` is definitionally `byteAt`), then `congr_arg (byteAt b)` with
+  an `omega` proof that `31 * (m / 31) + m % 31 = m`.
+
 ### Implementation notes for `Dal/Field.lean`
 
 - **Deployment parameters as axioms**: `r`, `n`, `n_pos`, `n_dvd_r_sub_one` are
@@ -128,9 +140,14 @@ dal/
 ### `Dal/Serialization.lean`
 - Defines `Bytes := Fin slot_size → Fin 256` and `serialize : Bytes → (Fin k → Fr)`.
 - Adds two supporting axioms (beyond those in `Field.lean`):
-  - `slot_size_eq : slot_size = k * 31` — makes the `k ≈ slot_size / 31` approximation exact.
+  - `slot_size_le : slot_size ≤ k * 31` — the `k` chunks together cover all `slot_size`
+    bytes, with at most 30 zero-padding bytes in the last chunk. Replaces the earlier
+    exact equality to accommodate the real Tezos deployment (`slot_size = 380832`,
+    last chunk is only 28 bytes).
   - `bytes31_lt_r : 256^31 < r` — holds for BLS12-381 (`r ≈ 2^255 > 2^248`); ensures
     the cast of a 31-byte chunk to `Fr` does not wrap around.
+- Defines `byteAt b m` — byte at position `m`, returning 0 for `m ≥ slot_size` (padding).
+- Defines `byteChunk b i j := byteAt b (31 * i + j)` — `j`-th byte of the `i`-th chunk.
 - Proves S1 (`serialize_injective`) via `Fintype.equivFin` injectivity and
   `ZMod.val_cast_of_lt`.
 - The 31-bytes-per-scalar encoding is fixed in this module.

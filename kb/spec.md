@@ -1,6 +1,6 @@
 ---
 title: Protocol Specification
-last-updated: 2026-03-23
+last-updated: 2026-03-24
 status: draft
 ---
 
@@ -49,7 +49,9 @@ Constraints:
 - `d ≥ 2l` (required by the multi-reveal proof construction; see
   `docs/protocol.md` §Multiple multi-reveals)
 - `l ∣ k` (so that `k / l` shards suffice for reconstruction; needed for S4)
-- `slot_size = k * 31` (exact serialization constraint; formalizes `k ≈ slot_size / 31`)
+- `slot_size ≤ k * 31` (serialization constraint: `k` chunks cover all bytes, with at most
+  30 zero-padding bytes in the last chunk; the actual Tezos DAL deployment has
+  `slot_size = 380832 = 31 × 12284 + 28`, so `k = 12285` with a 28-byte last chunk)
 - `256^31 < r` (BLS12-381 guarantee: a 31-byte chunk fits in one field element without
   wrap-around; `r ≈ 2^255 > 256^31 = 2^248`)
 

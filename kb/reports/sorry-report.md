@@ -1,20 +1,21 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-24
-run: 6
-status: 0 untracked, 0 tracked, 0 structural
+run: 7
+status: clean
 ---
 
 # Sorry Audit Report
 
 ## Changes since last run
 
-No regressions — zero sorries in run 5, zero sorries in run 6.
+No regressions — zero sorries in run 6, zero sorries in run 7.
 
-One new file has appeared since run 5: `dal/Dal/Serialization.lean`. It implements
-`Bytes`, `byteChunk`, `bytesToFr`, `serialize`, and proves `serialize_injective`
-(S1). All proofs are complete; no sorries. `dal/Dal.lean` has been updated to
-import `Dal.Serialization`.
+One change since run 6: `dal/Dal/Serialization.lean` has been updated. The
+`slot_size_eq` axiom (`slot_size = k * 31`) has been replaced with
+`slot_size_le` (`slot_size ≤ k * 31`), and `byteAt`/`byteChunk` now include
+zero-padding for positions beyond `slot_size`. All proofs remain complete with
+no sorries.
 
 ## Summary
 
@@ -60,5 +61,8 @@ simply unstarted modules.
 ## Verdict
 
 All clear. The formalization is sorry-free across all six project files.
-G7 (S1 / `serialize_injective`) is now resolved. Next task: `Dal/Protocol.lean`
-(P1, P2, S4).
+Next task: `Dal/Protocol.lean` (P1, P2, S4).
+
+Note: a spec-compliance issue was detected in this run regarding
+`slot_size_le` vs `slot_size = k * 31` — see `kb/reports/spec-compliance-report.md`
+run 7 for details. The sorry audit is unaffected (no new sorry obligations).

@@ -11,24 +11,28 @@ Byte-to-scalar serialization and its injectivity (S1).
 ## Contents
 
 - `Bytes`                    — `Fin slot_size → Fin 256` (a slot as a byte array)
-- `slot_size_eq`             — axiom: `slot_size = k * 31`
+- `slot_size_le`             — axiom: `slot_size ≤ k * 31`
 - `bytes31_lt_r`             — axiom: `256^31 < r`
-- `byteChunk`               — extract the `j`-th byte of the `i`-th 31-byte chunk
+- `byteAt`                  — byte at position `m`, or 0 if `m ≥ slot_size` (padding)
+- `byteChunk`               — 31-byte view of chunk `i` (partial last chunk is 0-padded)
 - `bytesToFr`               — encode a 31-byte chunk as a field element
 - `serialize`               — split slot bytes into `k` field elements
 - `serialize_injective`     — **S1**: serialization is injective
 
 ## Design
 
-`serialize` splits the `slot_size = k * 31` bytes into `k` consecutive 31-byte
-chunks and encodes each chunk as a field element via `Fintype.equivFin`.  The
-encoding is injective because (a) `Fintype.equivFin` is a bijection (hence
-injective) and (b) the encoded values are all less than `256^31 < r`, so the
-cast to `ZMod r` does not wrap around.
+`serialize` assigns each of the `k` chunks a 31-byte window of the slot, encoding it
+as a field element via `Fintype.equivFin`.  When `slot_size < k * 31`, the final
+chunk is shorter than 31 bytes and positions `≥ slot_size` within it are treated as 0.
 
-The permutation used in the OCaml reference implementation (`res.((elt * pages_per_slot) + page)`)
-is a bijection on indices and does not affect injectivity. This module formalizes
-the mathematical essence: bytes → chunks → field elements is injective.
+The actual Tezos DAL deployment has `slot_size = 380832 = 31 × 12284 + 28`, so `k = 12285`
+and the last chunk encodes only 28 real bytes.  The earlier `slot_size = k * 31`
+restriction has been removed; we only require `slot_size ≤ k * 31`.
+
+Injectivity: every byte position `m < slot_size` satisfies `m / 31 < k` (from
+`slot_size ≤ k * 31`), so byte `b m` appears as position `m % 31` of chunk `m / 31`.
+Equal serializations → equal chunk functions → equal `byteAt` values at all positions
+`< slot_size` → equal byte sequences.
 
 See `kb/architecture.md` §`Dal/Serialization.lean` and `docs/protocol.md`
 §"Serialize a byte sequence to a scalar array".
@@ -43,29 +47,39 @@ open Dal.Field
 /-- A slot is a byte sequence of length `slot_size`. -/
 abbrev Bytes := Fin slot_size → Fin 256
 
-/-! ### New parameter constraints -/
+/-! ### Parameter constraints -/
 
-/-- `slot_size = k * 31`: each of the `k` scalars encodes exactly 31 bytes.
-    Consistent with `k ≈ slot_size / 31` from `kb/spec.md` Parameters. -/
-axiom slot_size_eq : slot_size = k * 31
+/-- `slot_size ≤ k * 31`: the `k` chunks together cover all `slot_size` bytes, with
+    at most 30 zero-padding bytes in the last chunk.  The actual Tezos DAL deployment
+    has `slot_size = 380832 ≤ 12285 * 31 = 380835`. -/
+axiom slot_size_le : slot_size ≤ k * 31
 
 /-- `256^31 < r`: a 31-byte little-endian integer is always strictly less than `r`.
     Holds for BLS12-381 since `r ≈ 2^255 > 2^248 = 256^31`. -/
 axiom bytes31_lt_r : 256^31 < r
 
+/-! ### Byte access with padding -/
+
+/-- Byte at position `m` in slot `b`; returns 0 for positions `≥ slot_size`.
+    This zero-padding is used by the last chunk when `slot_size < k * 31`. -/
+noncomputable def byteAt (b : Bytes) (m : ℕ) : Fin 256 :=
+  if h : m < slot_size then b ⟨m, h⟩ else ⟨0, by norm_num⟩
+
+/-- `byteAt` returns the actual byte at in-bounds positions. -/
+@[simp] lemma byteAt_eq (b : Bytes) {m : ℕ} (h : m < slot_size) : byteAt b m = b ⟨m, h⟩ :=
+  dif_pos h
+
 /-! ### Chunk extraction -/
 
-/-- Extract the `j`-th byte of the `i`-th 31-byte chunk from byte array `b`.
-    The `i`-th chunk occupies positions `31*i … 31*i+30`. -/
-def byteChunk (b : Bytes) (i : Fin k) (j : Fin 31) : Fin 256 :=
-  b ⟨31 * i.val + j.val,
-    by have := i.isLt; have := j.isLt; rw [slot_size_eq]; omega⟩
+/-- The `j`-th byte of the `i`-th 31-byte chunk of slot `b`.
+    For the last chunk when `slot_size < k * 31`, positions beyond `slot_size` return 0. -/
+noncomputable def byteChunk (b : Bytes) (i : Fin k) (j : Fin 31) : Fin 256 :=
+  byteAt b (31 * i.val + j.val)
 
 /-! ### Chunk encoding -/
 
-/-- Encode a 31-byte chunk as a field element.  Uses `Fintype.equivFin` to map
-    `(Fin 31 → Fin 256)` bijectively into `Fin (256^31)`, then casts the index
-    to `Fr`.  The cast is injective because the index is < `256^31 < r`. -/
+/-- Encode a 31-byte chunk as a field element via `Fintype.equivFin`.
+    The encoded value is < `256^31 < r`, so the cast to `Fr` is injective. -/
 noncomputable def bytesToFr (chunk : Fin 31 → Fin 256) : Fr :=
   ((Fintype.equivFin (Fin 31 → Fin 256) chunk).val : Fr)
 
@@ -81,7 +95,6 @@ private lemma chunk_val_lt (chunk : Fin 31 → Fin 256) :
     _ = 256^31                           := card_byte_chunk
     _ < r                                := bytes31_lt_r
 
-/-- `Nat.cast : ℕ → Fr` is injective on `{n | n < r}`. -/
 private lemma natCast_inj {m n : ℕ} (hm : m < r) (hn : n < r)
     (h : (m : Fr) = (n : Fr)) : m = n := by
   have hval := congr_arg ZMod.val h
@@ -96,8 +109,8 @@ lemma bytesToFr_injective : Function.Injective bytesToFr := by
 
 /-! ### Serialization -/
 
-/-- Serialize a slot: split into `k` consecutive 31-byte chunks and encode each
-    as a field element.  `serialize b i` is the `i`-th scalar in DATA. -/
+/-- Serialize a slot: encode each 31-byte chunk as a field element.
+    `serialize b i` is the `i`-th scalar in DATA. -/
 noncomputable def serialize (b : Bytes) : Fin k → Fr :=
   fun i => bytesToFr (byteChunk b i)
 
@@ -105,27 +118,26 @@ noncomputable def serialize (b : Bytes) : Fin k → Fr :=
 
 /-- **S1**: Serialization is injective — equal scalar arrays imply equal byte sequences.
 
-    **Proof sketch**: Injectivity flows through two steps:
-    - `byteChunk` extracts bytes by index, so `serialize b₁ = serialize b₂` implies
-      `byteChunk b₁ i = byteChunk b₂ i` for every chunk `i` (via `bytesToFr_injective`).
-    - Every byte `b₁ m` equals `b₂ m` because `m` lies in some chunk `m / 31` at
-      position `m % 31`, and `31 * (m/31) + m%31 = m` (Euclidean division). -/
+    **Proof**: For any byte index `m < slot_size`, we have `m / 31 < k` (since
+    `m < slot_size ≤ k * 31`), so byte `b m` is the `(m % 31)`-th entry of chunk
+    `m / 31`.  Equal serializations imply equal chunks (via `bytesToFr_injective`),
+    which imply equal `byteAt` values, which imply equal bytes at all positions
+    `< slot_size` (where padding is never in play). -/
 theorem serialize_injective : Function.Injective serialize := by
   intro b₁ b₂ h
   have hchunk : ∀ i : Fin k, byteChunk b₁ i = byteChunk b₂ i :=
     fun i => bytesToFr_injective (congr_fun h i)
   ext ⟨m, hm⟩
-  have hm' : m < k * 31 := slot_size_eq ▸ hm
-  have hi  : m / 31 < k := by omega
+  have hm_lt : m < k * 31 := Nat.lt_of_lt_of_le hm slot_size_le
+  have hi  : m / 31 < k  := by omega
   have hj  : m % 31 < 31 := Nat.mod_lt _ (by norm_num)
-  -- byteChunk b ⟨m/31, hi⟩ ⟨m%31, hj⟩  definitionally equals  b ⟨31*(m/31)+m%31, _⟩
-  -- and  31*(m/31)+m%31 = m  (Euclidean division), so it equals  b ⟨m, hm⟩.
-  -- byteChunk b ⟨m/31, hi⟩ ⟨m%31, hj⟩  definitionally equals  b ⟨31*(m/31)+m%31, _⟩.
-  -- Use `show` to make the concrete form explicit, then congr_arg + Fin.ext + omega.
-  have reindex : ∀ b : Bytes,
-      byteChunk b ⟨m / 31, hi⟩ ⟨m % 31, hj⟩ = b ⟨m, hm⟩ :=
-    fun b => show b ⟨31 * (m / 31) + m % 31, by rw [slot_size_eq]; omega⟩ = b ⟨m, hm⟩
-               from congr_arg b (Fin.ext (show 31 * (m / 31) + m % 31 = m from by omega))
+  -- byteChunk b ⟨m/31, hi⟩ ⟨m%31, hj⟩ = byteAt b m = b ⟨m, hm⟩
+  -- Use `show` to expose the concrete byteAt form (byteChunk is definitionally byteAt),
+  -- then use Euclidean division (31*(m/31)+m%31 = m) and byteAt_eq.
+  have reindex : ∀ b : Bytes, byteChunk b ⟨m / 31, hi⟩ ⟨m % 31, hj⟩ = b ⟨m, hm⟩ :=
+    fun b => show byteAt b (31 * (m / 31) + m % 31) = b ⟨m, hm⟩ from
+      (congr_arg (byteAt b) (show 31 * (m / 31) + m % 31 = m from by omega)).trans
+        (byteAt_eq b hm)
   rw [← reindex b₁, ← reindex b₂]
   -- ext on (Fin slot_size → Fin 256) inserts Fin.val; bridge with congr_arg
   exact congr_arg Fin.val (congr_fun (hchunk ⟨m / 31, hi⟩) ⟨m % 31, hj⟩)

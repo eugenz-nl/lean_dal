@@ -29,7 +29,7 @@ statements. The full table with constraints is in [spec.md § Parameters](spec.m
 |--------|------|---------|
 | `r` | prime | Order of the scalar field `𝔽_r` (BLS12-381, `r ≈ 2^255`) |
 | `slot_size` | `ℕ` | Byte size of a slot |
-| `k` | `ℕ` | Dimension of the RS code; number of scalars encoding a slot (`k ≈ slot_size / 31`) |
+| `k` | `ℕ` | Dimension of the RS code; number of scalars encoding a slot. Satisfies `slot_size ≤ k * 31` (covers all bytes with at most 30 zero-padding bytes in the last chunk). |
 | `n` | `ℕ` | Length of the RS codeword (`n = α · k`, `n ∣ r − 1`) |
 | `α` | `ℕ` | Redundancy factor (`α = n / k ≥ 2`) |
 | `s` | `ℕ` | Number of shards (`s ∣ n`) |
@@ -88,6 +88,25 @@ by the DAL. A slot is encoded, committed, sharded, and distributed to DAL nodes.
 **Scalar / Field element**
 An element of the prime field `𝔽_r`, the scalar field of the BLS12-381 elliptic
 curve. `r` is a ~255-bit prime. In Lean: a type `Scalar` with field operations.
+
+**Bytes**
+The Lean type `Fin slot_size → Fin 256`: a slot represented as a byte array indexed
+by position. Used as the domain of `serialize`.
+
+**serialize**
+The injective map `Bytes → (Fin k → Fr)` that splits a slot into `k` field elements
+by packing 31 bytes per scalar. Positions `≥ slot_size` (the partial last chunk) are
+zero-padded. Injectivity is property S1.
+
+**slot_size_le**
+The Lean axiom `slot_size ≤ k * 31`: the `k` chunks together cover all `slot_size`
+bytes, with at most 30 zero-padding bytes in the last chunk. In the actual Tezos DAL
+deployment, `slot_size = 380832 = 31 × 12284 + 28` and `k = 12285`.
+
+**bytes31_lt_r**
+The Lean axiom `256^31 < r`: any 31-byte big-endian integer is strictly less than
+the field order `r` (since `r ≈ 2^255 > 256^31 = 2^248`). Ensures the encoding of a
+31-byte chunk as a field element does not wrap around, making the encoding injective.
 
 **DATA**
 A vector of `k` scalars obtained by serializing a slot (31 bytes per scalar,

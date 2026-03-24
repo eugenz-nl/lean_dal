@@ -50,7 +50,7 @@ from first principles in Lean.
 
 ## What NOT to do
 
-- Do not assert additional axioms beyond A1, A3, A6 without explicit human approval.
+- Do not assert additional axioms beyond A1, A2, A3, A6 without explicit human approval.
 - A4 (interpolation correctness) and A5 (polynomial uniqueness) are provable from
   Mathlib and must not be axiomatized.
 
