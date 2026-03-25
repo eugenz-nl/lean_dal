@@ -10,14 +10,15 @@ listed here is proved without `sorry`; the proofs are in the respective modules.
 
 ## Summary of properties
 
-| ID | Name                          | Module                | Status  |
-|----|-------------------------------|-----------------------|---------|
-| S1 | Serialization injectivity     | `Dal.Serialization`   | proved  |
-| S2 | Coset partition               | `Dal.Sharding`        | proved  |
-| S3 | Vanishing polynomial roots    | `Dal.Sharding`        | proved  |
-| S4 | Shard recovery (MDS)          | `Dal.ReedSolomon`     | proved  |
-| P1 | RS decoding succeeds          | `Dal.Protocol`        | proved  |
-| P2 | Page verification uniqueness  | `Dal.Protocol`        | proved  |
+| ID | Name                              | Module                | Status  |
+|----|-----------------------------------|-----------------------|---------|
+| S1 | Serialization injectivity         | `Dal.Serialization`   | proved  |
+| S2 | Coset partition                   | `Dal.Sharding`        | proved  |
+| S3 | Vanishing polynomial roots        | `Dal.Sharding`        | proved  |
+| S4 | Shard recovery (MDS)              | `Dal.ReedSolomon`     | proved  |
+| P1 | RS decoding succeeds              | `Dal.Protocol`        | proved  |
+| P2 | Page verification uniqueness      | `Dal.Protocol`        | proved  |
+| P3 | Shard verification implies recovery | `Dal.Protocol`      | proved  |
 
 See `kb/properties.md` for the full invariant statements and proof sketches.
 -/
@@ -94,5 +95,23 @@ theorem p1_rs_decoding_succeeds
                  (∀ i, proveEval p (xs i) (ys i) = some (πs i)) ∧
                  Dal.Poly.interpolate xs ys = p :=
   Dal.Protocol.rs_decoding_succeeds c xs hxs ys πs π_deg hverify hdeg
+
+/-! ### P3: Shard verification implies recovery -/
+
+/-- **P3**: If `k/l` shard proofs all verify against commitment `c`, there is a
+    unique polynomial committed to by `c` whose shard evaluations match the
+    claimed values and which equals the Lagrange interpolant of the collected
+    coset evaluation pairs. -/
+theorem p3_shard_verification_recovery
+    (I : Finset (Fin s)) (hI : I.card = k / l)
+    (c : G1)
+    (vs : Fin s → Fin l → Fr)
+    (πs : Fin s → G1)
+    (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
+    ∃! p : Poly, commit p = c ∧
+                 (∀ i ∈ I, proveShardEval p i = πs i) ∧
+                 (∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j) ∧
+                 Dal.Poly.interpolate (cosetPoints I hI) (shardVals I hI vs) = p :=
+  Dal.Protocol.shard_verification_recovery I hI c vs πs hverify
 
 end Dal.Properties

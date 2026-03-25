@@ -8,14 +8,17 @@ import Dal.ReedSolomon
 /-!
 # Dal.Protocol
 
-Top-level correctness theorems P1 and P2 assembled from the KZG axioms A1–A6.
+Top-level correctness theorems P1, P2, and P3 assembled from the KZG axioms A1–A7.
 
 ## Contents
 
-- `page_verification_unique` — **P2**: if `d+1` evaluation proofs verify against
+- `page_verification_unique`       — **P2**: if `d+1` evaluation proofs verify against
   commitment `c`, there is a unique polynomial explaining them.
-- `rs_decoding_succeeds`     — **P1**: additionally using a degree proof, the unique
+- `rs_decoding_succeeds`           — **P1**: additionally using a degree proof, the unique
   polynomial equals the Lagrange interpolant of the evaluation pairs.
+- `shard_verification_recovery`    — **P3**: if `k/l` shard proofs verify against `c`,
+  there is a unique polynomial committed to by `c` whose shard evaluations match and
+  which equals the Lagrange interpolant of the collected coset points.
 
 ## Proof strategy
 
@@ -28,12 +31,16 @@ Top-level correctness theorems P1 and P2 assembled from the KZG axioms A1–A6.
 - A4 (interpolation correctness) + A5 (polynomial uniqueness) to conclude
   `interpolate xs ys = p`
 
-See `kb/properties.md` §P1, P2 for the full invariant statements.
+**P3**: apply A7 to each `i ∈ I` to extract candidates (with degree bound included
+in A7's conclusion). A6 collapses to unique `p`. S4 (`shard_recovery`) gives
+`interpolate (cosetPoints I) (shardVals I vs) = p`.
+
+See `kb/properties.md` §P1, P2, P3 for the full invariant statements.
 -/
 
 namespace Dal.Protocol
 
-open Dal.Field Dal.Poly Dal.KZG Polynomial
+open Dal.Field Dal.Poly Dal.KZG Dal.Sharding Dal.ReedSolomon Polynomial
 
 /-! ### P2: Page verification uniqueness -/
 
@@ -106,5 +113,53 @@ theorem rs_decoding_succeeds
   -- Existence and uniqueness by A6
   exact ⟨p, ⟨hpc, hall, hint⟩,
          fun q ⟨hqc, _, _⟩ => commit_binding q p (hqc.trans hpc.symm)⟩
+
+/-! ### P3: Shard verification implies recovery -/
+
+/-- **P3**: If `k/l` shard proofs all verify against commitment `c`, there is a
+    unique polynomial `p` committed to by `c` such that:
+    - `proveShardEval p i = πs i` for each `i ∈ I`, and
+    - `shardEval p i j = vs i j` for each `i ∈ I`, `j : Fin l`, and
+    - `p` equals the Lagrange interpolant of all coset evaluation pairs.
+
+    **Proof**: A7 (shard eval soundness) yields a candidate polynomial for each
+    `i ∈ I` (with degree bound `≤ d` included). A6 (commitment binding) collapses
+    all candidates to a unique `p`. S4 (`shard_recovery`) gives the interpolant
+    identity. -/
+theorem shard_verification_recovery
+    (I : Finset (Fin s)) (hI : I.card = k / l)
+    (c : G1)
+    (vs : Fin s → Fin l → Fr)
+    (πs : Fin s → G1)
+    (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
+    ∃! p : Poly, commit p = c ∧
+                 (∀ i ∈ I, proveShardEval p i = πs i) ∧
+                 (∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j) ∧
+                 interpolate (cosetPoints I hI) (shardVals I hI vs) = p := by
+  -- I is nonempty since |I| = k/l > 0
+  have hkl_pos : 0 < k / l := Nat.div_pos (Nat.le_of_dvd k_pos l_dvd_k) l_pos
+  have hI_nonempty : I.Nonempty := Finset.card_pos.mp (hI ▸ hkl_pos)
+  obtain ⟨i0, hi0⟩ := hI_nonempty
+  -- A7 applied to each i ∈ I: candidate polynomial, degree bound, and evaluations
+  have hA7 : ∀ i ∈ I, ∃ q : Poly, commit q = c ∧ proveShardEval q i = πs i ∧
+      q.natDegree ≤ d ∧ ∀ j : Fin l, shardEval q i j = vs i j :=
+    fun i hi => verifyShardEval_soundness c i (vs i) (πs i) (hverify i hi)
+  -- Pick a witness from i0
+  obtain ⟨p, hpc, _, hp_deg, _⟩ := hA7 i0 hi0
+  -- All candidates equal p by A6; hence p satisfies proveShardEval and shardEval at every i
+  have hall_prove : ∀ i ∈ I, proveShardEval p i = πs i := fun i hi => by
+    obtain ⟨qi, hqc, hqprove, _, _⟩ := hA7 i hi
+    rw [commit_binding p qi (hpc.trans hqc.symm)]
+    exact hqprove
+  have hall_eval : ∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j := fun i hi j => by
+    obtain ⟨qi, hqc, _, _, hqeval⟩ := hA7 i hi
+    rw [commit_binding p qi (hpc.trans hqc.symm)]
+    exact hqeval j
+  -- S4: the Lagrange interpolant through the collected coset points equals p
+  have hint : interpolate (cosetPoints I hI) (shardVals I hI vs) = p :=
+    (Dal.ReedSolomon.shard_recovery I hI p hp_deg vs hall_eval).symm
+  -- Existence and uniqueness by A6
+  exact ⟨p, ⟨hpc, hall_prove, hall_eval, hint⟩,
+         fun q ⟨hqc, _, _, _⟩ => commit_binding q p (hqc.trans hpc.symm)⟩
 
 end Dal.Protocol

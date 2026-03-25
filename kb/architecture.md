@@ -19,7 +19,8 @@ for term definitions.
 All modules — `Dal/Field.lean`, `Dal/Poly.lean`, `Dal/KZG.lean`, `Dal/Sharding.lean`,
 `Dal/Serialization.lean`, `Dal/ReedSolomon.lean`, `Dal/Protocol.lean`, and
 `Dal/Properties.lean` — are implemented and build clean with zero sorry.
-See [gaps.md](gaps.md) for the complete history.
+`Dal/Protocol.lean` now contains P1, P2, and P3. `Dal/KZG.lean` now contains
+five security axioms (A1–A3, A6, A7). See [gaps.md](gaps.md) for the complete history.
 
 ### Implementation notes for `Dal/Serialization.lean`
 

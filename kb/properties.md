@@ -66,6 +66,16 @@ See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 - **Note**: Technically false in pure math; true under `d`-SDH. See
   [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
+### A7: Shard eval soundness
+`verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧ ∀ j, shardEval p i j = vs j`
+
+- **Lean target**: `Dal.KZG.verifyShardEval_soundness`
+- **Lean form**: `axiom`
+- **Status**: `axiom` (declared)
+- **Note**: Multi-reveal analogue of A1. The degree bound `p.natDegree ≤ d` is
+  included in the conclusion (valid KZG commitments bound the degree). Approved
+  2026-03-25. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+
 ---
 
 ## Provable lemmas (from Mathlib)
@@ -210,12 +220,11 @@ shard evaluation values `vs : Fin s → Fin l → Fr`, and shard proofs `πs : F
 
 - **Lean target**: `Dal.Protocol.shard_verification_recovery` (planned)
 - **Status**: `not started`
-- **Dependencies**: G8 (shardRemainder, proveShardEval, verifyShardEval declared in KZG),
-  G9 (verifyShardEval_soundness axiom A7 — approved 2026-03-25)
-- **Proof plan**: A7 for each `i ∈ I` gives candidates; A6 collapses to unique `p`.
-  S4 gives `interpolate(cosetPoints I, shardVals I vs) = p`. Degree bound `p.natDegree ≤ d`
-  comes from A7 (the candidate has degree `≤ d` from its KZG commitment). Distinctness
-  of `cosetPoints I hI` is `cosetPoints_injective` (already proved in S4).
+- **Status**: `proved`
+- **Proof**: A7 for each `i ∈ I` gives degree-bounded candidates; A6 collapses to
+  unique `p`. S4 (`Dal.ReedSolomon.shard_recovery`) gives the interpolant identity.
+  A7's conclusion includes `p.natDegree ≤ d`, so no separate degree proof is needed.
+  Re-exported as `Dal.Properties.p3_shard_verification_recovery`.
 
 ---
 

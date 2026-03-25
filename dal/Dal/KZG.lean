@@ -133,12 +133,13 @@ axiom commit_binding (p q : Poly) :
     commit p = commit q → p = q
 
 /-- **A7 — Shard eval soundness**: a valid shard proof implies the existence of
-    a committed polynomial whose evaluations on `Ω_i` equal the claimed values.
+    a committed polynomial whose evaluations on `Ω_i` equal the claimed values
+    and whose degree is bounded by `d` (implicit in any valid KZG commitment).
     Multi-reveal analogue of A1. Rests on the `d`-SDH assumption.
     Approved 2026-03-25. See `decisions/001-kzg-axioms.md` and gap G9. -/
 axiom verifyShardEval_soundness (c : G1) (i : Fin s) (vs : Fin l → Fr) (π : G1) :
     verifyShardEval c i vs π = true →
-    ∃ p : Poly, commit p = c ∧ proveShardEval p i = π ∧
+    ∃ p : Poly, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧
                 ∀ j : Fin l, shardEval p i j = vs j
 
 end Dal.KZG

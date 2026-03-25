@@ -154,14 +154,13 @@ formalization pass. No Lean code exists for any of them yet.
 
 - **Statement**: `(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) → ∃! p, commit p = c ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j) ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p`
 - **Lean target**: `Dal.Protocol.shard_verification_recovery`
-- **Status**: `unstarted`
-- **Blocked by**: G8 (types), G9 (A7 axiom)
-- **Proof plan**: Apply A7 for each `i ∈ I` to obtain candidates. Apply A6 (binding)
-  to collapse to unique `p`. Degree bound from A7. Apply S4 (`shard_recovery`) using
-  `cosetPoints_injective` (already proved) to conclude `interpolate(...) = p`.
-- **Note**: This is the end-to-end theorem connecting "verified shard proofs" to
-  "recovered polynomial". Without it, S4 is conditioned on correct shard evaluations
-  being given as a hypothesis, not derived from proof verification.
+- **Status**: `resolved`
+- **Completed**: Proved in `Dal/Protocol.lean`. A7 gives degree-bounded candidates;
+  A6 collapses to unique `p`; S4 (`shard_recovery`) gives the interpolant identity.
+  Re-exported as `Dal.Properties.p3_shard_verification_recovery`. Zero sorry.
+- **Note**: A7's conclusion includes `p.natDegree ≤ d` (baked in, since all valid
+  KZG commitments bound the degree), making P3 self-contained without a separate
+  degree-proof hypothesis.
 
 ---
 

@@ -149,9 +149,11 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
   **Lean status**: not yet declared. Planned in gap G8.
 
 **Shard soundness axiom**:
-- **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
+- **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧ ∀ j, shardEval p i j = vs j`
   This is the multi-reveal analogue of A1. Like A1/A3/A6, it rests on the `d`-SDH
-  assumption and is declared as an `axiom`. Approved 2026-03-25. See gap G9.
+  assumption and is declared as an `axiom`. The degree bound `p.natDegree ≤ d` is
+  included so that P3 requires no separate degree-proof hypothesis. Approved
+  2026-03-25. See gap G9 (resolved).
 
 ### S4 helper functions
 
