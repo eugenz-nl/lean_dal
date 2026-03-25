@@ -149,11 +149,11 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
   **Lean status**: not yet declared. Planned in gap G8.
 
 **Shard soundness axiom**:
-- **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧ ∀ j, shardEval p i j = vs j`
+- **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
   This is the multi-reveal analogue of A1. Like A1/A3/A6, it rests on the `d`-SDH
-  assumption and is declared as an `axiom`. The degree bound `p.natDegree ≤ d` is
-  included so that P3 requires no separate degree-proof hypothesis. Approved
-  2026-03-25. See gap G9 (resolved).
+  assumption and is declared as an `axiom`. The degree bound is **not** included:
+  the multi-reveal verification equation does not enforce a degree bound; P3 instead
+  requires an explicit `verifyDegree` hypothesis. Approved 2026-03-25. See gap G9.
 
 ### S4 helper functions
 
@@ -238,13 +238,14 @@ Apply Spec 1 for each `i` (eval soundness). Apply Spec 6 (binding) for uniquenes
 Prop 1 additionally uses Spec 3 (degree soundness), Spec 4 (interpolation), and
 Spec 2 + 5 to conclude `interpolate(...) = p`.
 
-### Property 3: Shard verification implies recovery (planned)
+### Property 3: Shard verification implies recovery
 
-Given a commitment `c`, an index set `I` with `|I| = k/l`, shard evaluation values
-`vs : Fin s → Fin l → Y`, and shard proofs `πs : Fin s → Π`:
+Given a commitment `c`, a degree proof `π_deg`, an index set `I` with `|I| = k/l`,
+shard evaluation values `vs : Fin s → Fin l → Y`, and shard proofs `πs : Fin s → Π`:
 
 ```
-(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = 1)
+verifyDegree(c, d, π_deg) = 1
+∧ (∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = 1)
 ⟹
 ∃! p,  commit(p) = c
      ∧ (∀ i ∈ I, proveShardEval p i = πs i)
@@ -252,7 +253,7 @@ Given a commitment `c`, an index set `I` with `|I| = k/l`, shard evaluation valu
      ∧ interpolate(cosetPoints I, shardVals I vs) = p
 ```
 
-**Proof sketch**: Apply A7 for each `i ∈ I` to obtain candidate polynomials. Apply
-A6 (binding) to collapse to a unique `p`. Apply S4 (shard recovery) to conclude
-`interpolate(cosetPoints I, shardVals I vs) = p`. Degree bound for S4 follows from
-A7. Lean status: `not started`. Planned in gap G10.
+**Proof sketch**: Apply A7 for each `i ∈ I` to obtain candidates. Apply A3 with
+`π_deg` to obtain the degree bound `p.natDegree ≤ d`. Apply A6 to collapse to a
+unique `p`. Apply S4 to conclude `interpolate(cosetPoints I, shardVals I vs) = p`.
+Lean status: `proved` (gap G10 resolved).

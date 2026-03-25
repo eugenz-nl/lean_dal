@@ -128,9 +128,10 @@ theorem rs_decoding_succeeds
     identity. -/
 theorem shard_verification_recovery
     (I : Finset (Fin s)) (hI : I.card = k / l)
-    (c : G1)
+    (c : G1) (π_deg : G1)
     (vs : Fin s → Fin l → Fr)
     (πs : Fin s → G1)
+    (hdeg : verifyDegree c d π_deg = true)
     (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
     ∃! p : Poly, commit p = c ∧
                  (∀ i ∈ I, proveShardEval p i = πs i) ∧
@@ -140,19 +141,22 @@ theorem shard_verification_recovery
   have hkl_pos : 0 < k / l := Nat.div_pos (Nat.le_of_dvd k_pos l_dvd_k) l_pos
   have hI_nonempty : I.Nonempty := Finset.card_pos.mp (hI ▸ hkl_pos)
   obtain ⟨i0, hi0⟩ := hI_nonempty
-  -- A7 applied to each i ∈ I: candidate polynomial, degree bound, and evaluations
+  -- A7 applied to each i ∈ I: candidate polynomial and shard evaluations
   have hA7 : ∀ i ∈ I, ∃ q : Poly, commit q = c ∧ proveShardEval q i = πs i ∧
-      q.natDegree ≤ d ∧ ∀ j : Fin l, shardEval q i j = vs i j :=
+      ∀ j : Fin l, shardEval q i j = vs i j :=
     fun i hi => verifyShardEval_soundness c i (vs i) (πs i) (hverify i hi)
   -- Pick a witness from i0
-  obtain ⟨p, hpc, _, hp_deg, _⟩ := hA7 i0 hi0
+  obtain ⟨p, hpc, _, _⟩ := hA7 i0 hi0
+  -- A3: recover degree bound from the degree proof (mirrors P1)
+  obtain ⟨p', hp'c, hp'deg, _⟩ := verifyDegree_soundness c π_deg d hdeg
+  have hp_deg : p.natDegree ≤ d := commit_binding p p' (hpc.trans hp'c.symm) ▸ hp'deg
   -- All candidates equal p by A6; hence p satisfies proveShardEval and shardEval at every i
   have hall_prove : ∀ i ∈ I, proveShardEval p i = πs i := fun i hi => by
-    obtain ⟨qi, hqc, hqprove, _, _⟩ := hA7 i hi
+    obtain ⟨qi, hqc, hqprove, _⟩ := hA7 i hi
     rw [commit_binding p qi (hpc.trans hqc.symm)]
     exact hqprove
   have hall_eval : ∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j := fun i hi j => by
-    obtain ⟨qi, hqc, _, _, hqeval⟩ := hA7 i hi
+    obtain ⟨qi, hqc, _, hqeval⟩ := hA7 i hi
     rw [commit_binding p qi (hpc.trans hqc.symm)]
     exact hqeval j
   -- S4: the Lagrange interpolant through the collected coset points equals p

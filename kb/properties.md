@@ -67,14 +67,15 @@ See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
   [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 ### A7: Shard eval soundness
-`verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧ ∀ j, shardEval p i j = vs j`
+`verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
 
 - **Lean target**: `Dal.KZG.verifyShardEval_soundness`
 - **Lean form**: `axiom`
 - **Status**: `axiom` (declared)
-- **Note**: Multi-reveal analogue of A1. The degree bound `p.natDegree ≤ d` is
-  included in the conclusion (valid KZG commitments bound the degree). Approved
-  2026-03-25. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+- **Note**: Multi-reveal analogue of A1. The degree bound is **not** included in
+  A7's conclusion: the multi-reveal verification equation does not enforce a degree
+  bound (review finding F4). P3 instead requires an explicit `verifyDegree`
+  hypothesis, mirroring P1. Approved 2026-03-25.
 
 ---
 
@@ -205,26 +206,31 @@ that `cosetPoints` and `shardVals` directly match the argument type of `Dal.Poly
   uses `cosets_disjoint` (S2) for cross-coset pairs and `ω_pow_inj` for within-coset
   pairs. See `Dal/ReedSolomon.lean`.
 
-### P3: Shard verification implies recovery (planned)
+### P3: Shard verification implies recovery
 
 **Statement**: Given `c : C`, an index set `I : Finset (Fin s)` with `|I| = k/l`,
-shard evaluation values `vs : Fin s → Fin l → Fr`, and shard proofs `πs : Fin s → G1`:
+a degree proof `π_deg : G1`, shard evaluation values `vs : Fin s → Fin l → Fr`, and
+shard proofs `πs : Fin s → G1`:
 
 ```
-(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true)
+verifyDegree c d π_deg = true
+→ (∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true)
 → ∃! p : Poly, commit p = c
              ∧ (∀ i ∈ I, proveShardEval p i = πs i)
              ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j)
              ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p
 ```
 
-- **Lean target**: `Dal.Protocol.shard_verification_recovery` (planned)
-- **Status**: `not started`
+- **Lean target**: `Dal.Protocol.shard_verification_recovery`
 - **Status**: `proved`
-- **Proof**: A7 for each `i ∈ I` gives degree-bounded candidates; A6 collapses to
-  unique `p`. S4 (`Dal.ReedSolomon.shard_recovery`) gives the interpolant identity.
-  A7's conclusion includes `p.natDegree ≤ d`, so no separate degree proof is needed.
-  Re-exported as `Dal.Properties.p3_shard_verification_recovery`.
+- **Proof**: A7 for each `i ∈ I` gives candidates (no degree bound). A3
+  (`verifyDegree_soundness`) gives `p.natDegree ≤ d` from the explicit degree-proof
+  hypothesis `π_deg`, mirroring P1. A6 collapses to unique `p`. S4 gives the
+  interpolant identity. Re-exported as `Dal.Properties.p3_shard_verification_recovery`.
+- **Note (review finding F4)**: The earlier version obtained the degree bound from
+  A7 directly (A7 included `p.natDegree ≤ d`). This was overstated: the multi-reveal
+  verification equation does not enforce a degree bound. The fix adds an explicit
+  `verifyDegree` hypothesis, consistent with how P1 handles degree.
 
 ---
 
@@ -232,8 +238,8 @@ shard evaluation values `vs : Fin s → Fin l → Fr`, and shard proofs `πs : F
 
 When modifying any Lean file, verify:
 
-- [ ] A1–A6 are still present as `axiom` or proved statements
-- [ ] P1 and P2 still type-check (even if `sorry`-bodied)
+- [ ] A1–A7 are still present as `axiom` or proved statements
+- [ ] P1, P2, and P3 still type-check (even if `sorry`-bodied)
 - [ ] S1–S4 still type-check
 - [ ] No existing proved theorem has been weakened (statement made strictly weaker)
 - [ ] `lake build` passes

@@ -148,19 +148,66 @@ formalization pass. No Lean code exists for any of them yet.
 - **Lean target**: `Dal.KZG.verifyShardEval_soundness`
 - **Status**: `resolved`
 - **Completed**: Declared as `axiom` in `Dal/KZG.lean`. Approved 2026-03-25.
-  See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+- **Note (review finding F4)**: An earlier version included `p.natDegree ≤ d` in
+  A7's conclusion, but this was stronger than the cryptographic primitive warrants:
+  the multi-reveal verification equation does not enforce a degree bound. The degree
+  bound was removed from A7; P3 now requires an explicit `verifyDegree` hypothesis,
+  mirroring P1.
 
 ### G10: `shard_verification_recovery` theorem (P3)
 
-- **Statement**: `(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) → ∃! p, commit p = c ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j) ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p`
+- **Statement**: `verifyDegree c d π_deg = true → (∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) → ∃! p, commit p = c ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j) ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p`
 - **Lean target**: `Dal.Protocol.shard_verification_recovery`
 - **Status**: `resolved`
-- **Completed**: Proved in `Dal/Protocol.lean`. A7 gives degree-bounded candidates;
-  A6 collapses to unique `p`; S4 (`shard_recovery`) gives the interpolant identity.
-  Re-exported as `Dal.Properties.p3_shard_verification_recovery`. Zero sorry.
-- **Note**: A7's conclusion includes `p.natDegree ≤ d` (baked in, since all valid
-  KZG commitments bound the degree), making P3 self-contained without a separate
-  degree-proof hypothesis.
+- **Completed**: Proved in `Dal/Protocol.lean`. A7 gives candidates (no degree
+  bound); A3 (`verifyDegree_soundness`) gives `p.natDegree ≤ d` via a separate
+  degree-proof hypothesis `π_deg` (mirroring P1); A6 collapses to unique `p`; S4
+  gives the interpolant identity. Re-exported as
+  `Dal.Properties.p3_shard_verification_recovery`. Zero sorry.
+
+---
+
+## Gaps identified by external review (docs/review-1bdfef9.md)
+
+### G11: Page-based serialization with interleaving (Finding F1)
+
+- **Scope**: `Dal/Serialization.lean` — the current model uses contiguous 31-byte
+  chunks. The real Tezos DAL uses an interleaved layout:
+  `res[elt * pages_per_slot + page]`, ensuring each page's scalar elements form a
+  coset of the interpolation domain. This enables constant-time KZG multi-reveal
+  proofs for L1 page verification.
+- **Status**: `unstarted`
+- **Impact**: S1 (serialization injectivity) holds for both layouts, so no existing
+  theorem is invalidated. A future page-level verification property (analogous to P3
+  but for pages) would require modeling the interleaving.
+- **Scope of fix**: Replace `byteChunk`/`serialize` with an interleaved layout;
+  reprove S1; add a page-level verification theorem.
+
+### G12: Completeness axioms for KZG verification (Finding F2)
+
+- **Scope**: The formalization proves soundness ("if verification passes, then a
+  valid witness exists") but not completeness ("an honest prover's proofs always
+  pass verification"). Missing axioms:
+  - `verifyEval_complete` (A1-completeness): `proveEval p x (eval p x) = some π → verifyEval x (eval p x) (commit p) π = true`
+    *(A2 ensures `proveEval` produces a proof when `eval p x = y`, but does not
+    guarantee `verifyEval` accepts it.)*
+  - `proveDegree_complete` (A3-completeness): `p.natDegree ≤ d → ∃ π, proveDegree p d = some π ∧ verifyDegree (commit p) d π = true`
+  - `verifyShardEval_complete` (A7-completeness): `(∀ j, shardEval p i j = vs j) → verifyShardEval (commit p) i vs (proveShardEval p i) = true`
+- **Status**: `unstarted`
+- **Impact**: Without completeness, the formalization proves the scheme is secure
+  (soundness + binding) but not that it works for honest participants. No existing
+  theorem is invalidated; these axioms would add the positive direction.
+
+### G13: End-to-end round-trip theorem (Finding F3)
+
+- **Scope**: `Dal/Protocol.lean` — the full DAL pipeline is:
+  `bytes → serialize → scalars → interpolate → poly → commit → … → verify shards → interpolate → poly → evaluate → scalars → deserialize → bytes`.
+  The formalization proves individual links (S1, P1, P3) but not their composition.
+- **Status**: `unstarted`
+- **Blocked by**: G12 (completeness axioms) needed to show the prover's proofs
+  succeed; G11 (interleaved serialization) needed for page-level round-trip.
+- **Scope of fix**: Define `deserialize : (Fin k → Fr) → Bytes` as a left inverse
+  of `serialize`; prove `deserialize (serialize b) = b`; compose with P3 and S4.
 
 ---
 

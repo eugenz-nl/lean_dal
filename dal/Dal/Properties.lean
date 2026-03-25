@@ -103,14 +103,15 @@ theorem p1_rs_decoding_succeeds
     coset evaluation pairs. -/
 theorem p3_shard_verification_recovery
     (I : Finset (Fin s)) (hI : I.card = k / l)
-    (c : G1)
+    (c : G1) (π_deg : G1)
     (vs : Fin s → Fin l → Fr)
     (πs : Fin s → G1)
+    (hdeg : verifyDegree c d π_deg = true)
     (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
     ∃! p : Poly, commit p = c ∧
                  (∀ i ∈ I, proveShardEval p i = πs i) ∧
                  (∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j) ∧
                  Dal.Poly.interpolate (cosetPoints I hI) (shardVals I hI vs) = p :=
-  Dal.Protocol.shard_verification_recovery I hI c vs πs hverify
+  Dal.Protocol.shard_verification_recovery I hI c π_deg vs πs hdeg hverify
 
 end Dal.Properties
