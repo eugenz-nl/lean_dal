@@ -146,6 +146,9 @@ dal/
 - Asserts A1, A2, A3, A6 as `axiom`. Proves A4, A5 (or references `Poly.lean`).
 - **Key design choice**: KZG functions operate on `Poly`, not raw byte arrays. See
   [decisions/002-kzg-over-poly.md](decisions/002-kzg-over-poly.md).
+- **Planned (gap G8/G9)**: `shardRemainder`, `proveShardEval`, `verifyShardEval`
+  as `opaque` declarations, and `verifyShardEval_soundness` as axiom A7.
+  Requires explicit human approval before adding (per Decision 001).
 
 ### `Dal/Sharding.lean`
 - Defines `Ω : Fin s → Finset 𝔽_r` (the `s` cosets).

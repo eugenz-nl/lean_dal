@@ -139,11 +139,19 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
 - **`shardRemainder : P → Fin s → P`** — the remainder `r_i` of degree `< l` such
   that `p = Z_i · q_i + r_i` (euclidean division by `Z_i`). Equivalently, `r_i` is
   the unique polynomial of degree `< l` agreeing with `p` on `Ω_i`.
+  **Lean status**: not yet declared. Planned in gap G8.
 - **`proveShardEval : P → Fin s → Π`** — multi-reveal proof for coset `Ω_i`:
   `π_i = [q_i(τ)]_1` where `q_i = (p - shardRemainder p i) / Z_i`
+  **Lean status**: not yet declared. Planned in gap G8.
 - **`verifyShardEval : C → Fin s → (Fin l → Y) → Π → B`** — checks
   `e(c - [r_i(τ)]_1, g_2) = e(π_i, [τ^l]_2 - [ω^{il}]_2)`
-  where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`
+  where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`.
+  **Lean status**: not yet declared. Planned in gap G8.
+
+**Shard soundness axiom (planned, not yet in Lean)**:
+- **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
+  This is the multi-reveal analogue of A1. Like A1/A3/A6, it rests on the `d`-SDH
+  assumption and must be declared as an `axiom`. Planned in gap G9.
 
 ### S4 helper functions
 
@@ -227,3 +235,22 @@ Given a commitment `c`, `d+1` evaluation points and proofs:
 Apply Spec 1 for each `i` (eval soundness). Apply Spec 6 (binding) for uniqueness.
 Prop 1 additionally uses Spec 3 (degree soundness), Spec 4 (interpolation), and
 Spec 2 + 5 to conclude `interpolate(...) = p`.
+
+### Property 3: Shard verification implies recovery (planned)
+
+Given a commitment `c`, an index set `I` with `|I| = k/l`, shard evaluation values
+`vs : Fin s → Fin l → Y`, and shard proofs `πs : Fin s → Π`:
+
+```
+(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = 1)
+⟹
+∃! p,  commit(p) = c
+     ∧ (∀ i ∈ I, proveShardEval p i = πs i)
+     ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j)
+     ∧ interpolate(cosetPoints I, shardVals I vs) = p
+```
+
+**Proof sketch**: Apply A7 for each `i ∈ I` to obtain candidate polynomials. Apply
+A6 (binding) to collapse to a unique `p`. Apply S4 (shard recovery) to conclude
+`interpolate(cosetPoints I, shardVals I vs) = p`. Degree bound for S4 follows from
+A7. Lean status: `not started`. Planned in gap G10.

@@ -124,6 +124,54 @@ These may be provable from Mathlib rather than assumed as axioms.
 
 ---
 
+## Planned gaps (not yet started)
+
+These gaps were identified from external feedback and are planned for a future
+formalization pass. No Lean code exists for any of them yet.
+
+### G8: `shardRemainder`, `proveShardEval`, `verifyShardEval` (axiom declarations)
+
+- **Scope**: `Dal/KZG.lean` needs three new opaque declarations:
+  - `shardRemainder : Poly → Fin s → Poly` — euclidean remainder of `p` by `Z_i`
+    (degree `< l`, agrees with `p` on `Ω_i`)
+  - `proveShardEval : Poly → Fin s → G1` — multi-reveal proof `[q_i(τ)]_1`
+    where `q_i = (p - shardRemainder p i) / Z_i`
+  - `verifyShardEval : G1 → Fin s → (Fin l → Fr) → G1 → Bool` — pairing check
+    `e(c - [r_i(τ)]_1, g_2) = e(π_i, [τ^l]_2 - [ω^{il}]_2)`
+- **Status**: `unstarted`
+- **Blocked by**: nothing — can be added to `Dal/KZG.lean` as `opaque` or `axiom`
+  declarations mirroring the existing KZG functions.
+- **Note**: `shardRemainder` is mathematically well-defined (euclidean division in
+  `Poly`) but its internal structure is not needed for the soundness axiom. Declare
+  it `opaque` like `commit` and `proveEval`.
+
+### G9: `verifyShardEval_soundness` axiom (A7)
+
+- **Statement**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
+- **Lean target**: `Dal.KZG.verifyShardEval_soundness`
+- **Status**: `unstarted`
+- **Blocked by**: G8 (the types must exist first)
+- **Note**: Multi-reveal analogue of A1 (`verifyEval_soundness`). Rests on `d`-SDH
+  like A1. Must be declared as `axiom` — requires **explicit human approval** per
+  [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md) before adding to Lean.
+  The axiom also implies a degree bound: the committed `p` satisfies
+  `p.natDegree ≤ d` (inherited from the commitment).
+
+### G10: `shard_verification_recovery` theorem (P3)
+
+- **Statement**: `(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) → ∃! p, commit p = c ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j) ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p`
+- **Lean target**: `Dal.Protocol.shard_verification_recovery`
+- **Status**: `unstarted`
+- **Blocked by**: G8 (types), G9 (A7 axiom)
+- **Proof plan**: Apply A7 for each `i ∈ I` to obtain candidates. Apply A6 (binding)
+  to collapse to unique `p`. Degree bound from A7. Apply S4 (`shard_recovery`) using
+  `cosetPoints_injective` (already proved) to conclude `interpolate(...) = p`.
+- **Note**: This is the end-to-end theorem connecting "verified shard proofs" to
+  "recovered polynomial". Without it, S4 is conditioned on correct shard evaluations
+  being given as a hypothesis, not derived from proof verification.
+
+---
+
 ## TODO: Areas not yet analyzed
 
 These sections of `docs/protocol.md` have no KB coverage and no Lean code. They

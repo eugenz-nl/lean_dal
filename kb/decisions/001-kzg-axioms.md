@@ -54,6 +54,16 @@ from first principles in Lean.
 - A4 (interpolation correctness) and A5 (polynomial uniqueness) are provable from
   Mathlib and must not be axiomatized.
 
+## Planned extension: A7 (shard eval soundness)
+
+A seventh axiom is planned but **not yet approved**:
+
+- **A7** (shard eval soundness): `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
+
+This is the multi-reveal analogue of A1, underpinning P3 (shard verification implies
+recovery). Like A1/A3/A6, it rests on the `d`-SDH assumption. It must not be added
+to `Dal/KZG.lean` without explicit human approval. See gap G9 in `kb/gaps.md`.
+
 ## KB changes (required for `implemented` status)
 
 - [x] `kb/properties.md`: A1, A3, A6 listed under **Axioms**; A4 and A5 moved to

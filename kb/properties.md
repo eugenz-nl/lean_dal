@@ -195,6 +195,28 @@ that `cosetPoints` and `shardVals` directly match the argument type of `Dal.Poly
   uses `cosets_disjoint` (S2) for cross-coset pairs and `ω_pow_inj` for within-coset
   pairs. See `Dal/ReedSolomon.lean`.
 
+### P3: Shard verification implies recovery (planned)
+
+**Statement**: Given `c : C`, an index set `I : Finset (Fin s)` with `|I| = k/l`,
+shard evaluation values `vs : Fin s → Fin l → Fr`, and shard proofs `πs : Fin s → G1`:
+
+```
+(∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true)
+→ ∃! p : Poly, commit p = c
+             ∧ (∀ i ∈ I, proveShardEval p i = πs i)
+             ∧ (∀ i ∈ I, ∀ j, shardEval p i j = vs i j)
+             ∧ interpolate (cosetPoints I hI) (shardVals I hI vs) = p
+```
+
+- **Lean target**: `Dal.Protocol.shard_verification_recovery` (planned)
+- **Status**: `not started`
+- **Dependencies**: G8 (shardRemainder, proveShardEval, verifyShardEval declared in KZG),
+  G9 (verifyShardEval_soundness axiom A7)
+- **Proof plan**: A7 for each `i ∈ I` gives candidates; A6 collapses to unique `p`.
+  S4 gives `interpolate(cosetPoints I, shardVals I vs) = p`. Degree bound `p.natDegree ≤ d`
+  comes from A7 (the candidate has degree `≤ d` from its KZG commitment). Distinctness
+  of `cosetPoints I hI` is `cosetPoints_injective` (already proved in S4).
+
 ---
 
 ## Invariant preservation checklist
