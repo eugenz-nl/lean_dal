@@ -28,7 +28,7 @@ degree-`≤ d` polynomial with the given evaluations at `d+1` distinct coset poi
 Distinctness uses `cosets_disjoint` (S2) for cross-coset pairs and `ω_pow_inj` for
 within-coset pairs.
 
-See `kb/properties.md` §S4 and `kb/spec.md` §S4 helper functions.
+The full theorem statements are given by the signatures below.
 -/
 
 namespace Dal.ReedSolomon

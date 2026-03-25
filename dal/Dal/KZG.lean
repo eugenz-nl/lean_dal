@@ -30,12 +30,13 @@ functions, and the five security axioms A1–A3, A6, A7.
 
 All group types and KZG functions are opaque (`axiom`): formalizing BLS12-381
 or the KZG computation would require a verified cryptography library that is
-out of scope. The five security axioms are the only things needed to prove P1,
-P2, and P3 at the protocol level. See `decisions/001-kzg-axioms.md`.
+out of scope. The five security axioms (A1–A3, A6, A7) are the only things
+needed to prove P1, P2, and P3 at the protocol level; they follow from the
+`d`-strong Diffie-Hellman assumption over BLS12-381, which is a computational
+hardness assumption outside the scope of this formalization.
 
-Note: `spec.md` and `properties.md` both list A2 as an axiom (alongside A1, A3,
-A6). Decision 001 mentions only three axioms (A1, A3, A6), which is an oversight
-— A2 is also axiomatized here since `proveEval` is opaque.
+Note: A2 must also be axiomatized because `proveEval` is opaque — its
+completeness cannot be derived from the type alone.
 -/
 
 namespace Dal.KZG
@@ -128,15 +129,14 @@ axiom verifyDegree_soundness (c π : G1) (bound : ℕ) :
 
 /-- **A6 — Commitment binding**: two polynomials with the same commitment are
     equal. Technically false in pure math but computationally infeasible to
-    violate under `d`-SDH. See `decisions/001-kzg-axioms.md`. -/
+    violate under the `d`-SDH assumption. -/
 axiom commit_binding (p q : Poly) :
     commit p = commit q → p = q
 
 /-- **A7 — Shard eval soundness**: a valid shard proof implies the existence of
     a committed polynomial whose evaluations on `Ω_i` equal the claimed values
     and whose degree is bounded by `d` (implicit in any valid KZG commitment).
-    Multi-reveal analogue of A1. Rests on the `d`-SDH assumption.
-    Approved 2026-03-25. See `decisions/001-kzg-axioms.md` and gap G9. -/
+    Multi-reveal analogue of A1. Rests on the `d`-SDH assumption. -/
 axiom verifyShardEval_soundness (c : G1) (i : Fin s) (vs : Fin l → Fr) (π : G1) :
     verifyShardEval c i vs π = true →
     ∃ p : Poly, commit p = c ∧ proveShardEval p i = π ∧ p.natDegree ≤ d ∧

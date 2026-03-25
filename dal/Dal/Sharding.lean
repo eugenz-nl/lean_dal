@@ -29,7 +29,7 @@ S3 is proved using `IsPrimitiveRoot.nthRoots_eq`, which characterises the roots 
 `X^l − a` as `{ζ^j · α : j < l}` whenever `ζ` is a primitive `l`-th root of unity
 and `α^l = a`.  S2 follows from the Euclidean-division bijection on `{0, …, n−1}`.
 
-See `kb/properties.md` for the full invariant statements.
+The full invariant statements are given by the theorem signatures below.
 -/
 
 namespace Dal.Sharding

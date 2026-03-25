@@ -4,8 +4,7 @@ import Mathlib.LinearAlgebra.Lagrange
 /-!
 # Dal.Poly
 
-Polynomial type `Poly`, Lagrange interpolation, and the two provable lemmas A4 and
-A5 from `kb/properties.md`.
+Polynomial type `Poly`, Lagrange interpolation, and the two provable lemmas A4 and A5.
 
 ## Contents
 
@@ -20,7 +19,8 @@ A5 from `kb/properties.md`.
 
 Uses Mathlib's `Lagrange.interpolate` over `Finset.univ (α := Fin (d + 1))`.
 All theorems require the evaluation points to be distinct: `Function.Injective xs`.
-See `decisions/002-kzg-over-poly.md`.
+KZG functions and protocol proofs operate on `Poly` directly; serialization converts
+bytes to/from field element arrays separately, keeping the algebraic layer clean.
 
 ## Mathlib API notes
 

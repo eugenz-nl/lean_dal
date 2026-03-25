@@ -34,8 +34,7 @@ Injectivity: every byte position `m < slot_size` satisfies `m / 31 < k` (from
 Equal serializations → equal chunk functions → equal `byteAt` values at all positions
 `< slot_size` → equal byte sequences.
 
-See `kb/architecture.md` §`Dal/Serialization.lean` and `docs/protocol.md`
-§"Serialize a byte sequence to a scalar array".
+See `docs/protocol.md` §"Serialize a byte sequence to a scalar array".
 -/
 
 namespace Dal.Serialization

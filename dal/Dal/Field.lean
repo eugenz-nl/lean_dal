@@ -12,10 +12,12 @@ unity `ω` for the DAL formalization.
 
 All global DAL deployment parameters are declared as `axiom` here so that every
 downstream module (`Poly`, `KZG`, `Sharding`, …) can refer to them by name after a
-single `import Dal.Field`.  See `decisions/003-field-parameters-as-axioms.md`.
+single `import Dal.Field`, without threading them through every signature.
 
-`𝔽_r` is modelled as `ZMod r`.  `ω` is axiomatized via `IsPrimitiveRoot ω n`,
-consistent with the treatment of KZG constants (see `decisions/001-kzg-axioms.md`).
+`𝔽_r` is modelled as `ZMod r`.  `ω` is axiomatized via `IsPrimitiveRoot ω n`.
+Existence of a primitive `n`-th root follows from the cyclic structure of `(ZMod r)ˣ`
+and `n ∣ r − 1`, but axiomatizing it is consistent with the treatment of KZG
+constants and avoids Mathlib API work that is out of scope here.
 
 ## Parameters exposed by this module
 
@@ -31,7 +33,8 @@ namespace Dal.Field
 
 /-! ### Deployment parameters
 
-All declared as `axiom` (see `decisions/003-field-parameters-as-axioms.md`).
+All declared as `axiom` so downstream modules can use bare names without
+threading parameters through every function signature.
 -/
 
 /-- BLS12-381 scalar field prime order. -/

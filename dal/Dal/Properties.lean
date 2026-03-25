@@ -20,7 +20,6 @@ listed here is proved without `sorry`; the proofs are in the respective modules.
 | P2 | Page verification uniqueness      | `Dal.Protocol`        | proved  |
 | P3 | Shard verification implies recovery | `Dal.Protocol`      | proved  |
 
-See `kb/properties.md` for the full invariant statements and proof sketches.
 -/
 
 namespace Dal.Properties

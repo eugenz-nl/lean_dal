@@ -35,7 +35,7 @@ Top-level correctness theorems P1, P2, and P3 assembled from the KZG axioms A1â€
 in A7's conclusion). A6 collapses to unique `p`. S4 (`shard_recovery`) gives
 `interpolate (cosetPoints I) (shardVals I vs) = p`.
 
-See `kb/properties.md` Â§P1, P2, P3 for the full invariant statements.
+The full invariant statements are given by the theorem signatures below.
 -/
 
 namespace Dal.Protocol
