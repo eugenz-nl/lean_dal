@@ -31,9 +31,9 @@ Top-level correctness theorems P1, P2, and P3 assembled from the KZG axioms A1�
 - A4 (interpolation correctness) + A5 (polynomial uniqueness) to conclude
   `interpolate xs ys = p`
 
-**P3**: apply A7 to each `i ∈ I` to extract candidates (with degree bound included
-in A7's conclusion). A6 collapses to unique `p`. S4 (`shard_recovery`) gives
-`interpolate (cosetPoints I) (shardVals I vs) = p`.
+**P3**: apply A7 to each `i ∈ I` to extract candidates. A3 (degree soundness) via
+the explicit `verifyDegree` hypothesis gives `p.natDegree ≤ d`. A6 collapses to
+unique `p`. S4 (`shard_recovery`) gives `interpolate (cosetPoints I) (shardVals I vs) = p`.
 
 The full invariant statements are given by the theorem signatures below.
 -/
