@@ -1,6 +1,6 @@
 ---
 title: Open Proof Obligations and Gaps
-last-updated: 2026-03-24
+last-updated: 2026-03-25
 status: draft
 ---
 
@@ -48,20 +48,23 @@ They must be addressed before the formalization is useful.
   definitions; `s_mul_l_eq_n`, `l_dvd_n`, `coset_index_lt`, `ωs_isPrimitiveRoot`
   lemmas; `vanishing_poly_roots` (S3), `coset_partition` and `cosets_disjoint`
   (S2). All proved without `sorry`.
-- **Completed**: `Dal/Serialization.lean` — `Bytes` type alias, `byteAt` (with
-  zero-padding for partial last chunk), `byteChunk`, `bytesToFr` (via `Fintype.equivFin`),
-  `serialize`; new axioms `slot_size_le : slot_size ≤ k * 31` (generalized from equality
-  to handle `slot_size = 380832`) and `bytes31_lt_r : 256^31 < r`;
-  `serialize_injective` (S1). All proved without `sorry`.
+- **Completed**: `Dal/Serialization.lean` — `Bytes` type alias; page structure
+  axioms (`pages_per_slot`, `page_size`, `page_length`, positivity, product, bound
+  axioms); `slot_size_le` (derived lemma); `byteAt` (zero-padded); interleaved
+  `byteChunk` (`page = i % pages_per_slot`, `elt = i / pages_per_slot`, byte at
+  `page * page_size + elt * 31 + j`); `bytesToFr` (via `Fintype.equivFin`);
+  `serialize`; `serialize_injective` (S1). All proved without `sorry`.
+  See G11 (resolved).
 - **Completed**: `Dal/ReedSolomon.lean` — `rsEncode`, `cosetPoints`, `shardVals`,
   `cosetPoint_mem_Ω`, `cosetPoints_injective`, `shard_recovery` (S4). All proved
   without `sorry`.
 - **Completed**: `Dal/Protocol.lean` — `page_verification_unique` (P2) and
   `rs_decoding_succeeds` (P1). Both proved without `sorry` from A1–A6 via A4+A5.
 - **Completed**: `Dal/Properties.lean` — correctness certificate re-exporting all
-  eight proved invariants: `s1_serialize_injective`, `s2_coset_partition`,
+  seven proved invariants: `s1_serialize_injective`, `s2_coset_partition`,
   `s2_cosets_disjoint`, `s3_vanishing_poly_roots`, `s4_shard_recovery`,
-  `p2_page_verification_unique`, `p1_rs_decoding_succeeds`. Zero sorry.
+  `p2_page_verification_unique`, `p1_rs_decoding_succeeds`,
+  `p3_shard_verification_recovery`. Zero sorry.
 - **Status**: `G1` is fully resolved. All modules in `Dal/` build clean with zero sorry.
 
 ---
@@ -176,12 +179,16 @@ formalization pass. No Lean code exists for any of them yet.
   `res[elt * pages_per_slot + page]`, ensuring each page's scalar elements form a
   coset of the interpolation domain. This enables constant-time KZG multi-reveal
   proofs for L1 page verification.
-- **Status**: `unstarted`
-- **Impact**: S1 (serialization injectivity) holds for both layouts, so no existing
-  theorem is invalidated. A future page-level verification property (analogous to P3
-  but for pages) would require modeling the interleaving.
-- **Scope of fix**: Replace `byteChunk`/`serialize` with an interleaved layout;
-  reprove S1; add a page-level verification theorem.
+- **Status**: `resolved`
+- **Completed**: `Dal/Serialization.lean` rewritten with page structure axioms
+  (`pages_per_slot`, `page_size`, `page_length`, their positivity and constraint
+  axioms), `slot_size_le` (derived from the page bounds), interleaved `byteChunk`
+  (scalar `i` → page `i % pages_per_slot`, element `i / pages_per_slot`, byte at
+  `page * page_size + elt * 31 + j`), and a fully reproved `serialize_injective`
+  (S1). Zero sorry. Build clean.
+- **Impact**: S1 (serialization injectivity) holds for the interleaved layout.
+  A future page-level verification property (P4, analogous to P3 but for pages)
+  would build directly on this model.
 
 ### G12: Completeness axioms for KZG verification (Finding F2)
 

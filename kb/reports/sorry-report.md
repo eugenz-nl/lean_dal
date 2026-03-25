@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
-date: 2026-03-24
-run: 10
+date: 2026-03-25
+run: 11
 status: clean
 ---
 
@@ -9,15 +9,12 @@ status: clean
 
 ## Changes since last run
 
-One new file added since run 9: `dal/Dal/Properties.lean`. The file contains no
-`sorry` or `admit` occurrences. The only occurrence of the word "sorry" in
-`Properties.lean` is inside a doc-comment string on line 9 ("proved without
-`sorry`"), which is not a tactic invocation.
+`Dal/Serialization.lean` was completely rewritten (gap G11 resolved): page structure
+axioms added, `byteChunk` replaced with an interleaved layout, `serialize_injective`
+reproved. No `sorry` or `admit` was introduced. G8, G9, G10 (A7 and P3) were also
+completed since run 10; their Lean files have zero sorry.
 
-`Dal.lean` now imports `Dal.Properties` (line 8), so the top-level barrel file
-also remains clean.
-
-All KB obligations that were listed as resolved in run 9 remain resolved.
+The KB obligation cross-check is updated to include G8/G9/G10 entries.
 
 ## Summary
 
@@ -48,27 +45,29 @@ All KB obligations that were listed as resolved in run 9 remain resolved.
 | S2 — coset_partition (union) | `Dal.Sharding.coset_partition` | **resolved** (proved) |
 | S2 — cosets_disjoint | `Dal.Sharding.cosets_disjoint` | **resolved** (proved) |
 | S3 — vanishing_poly_roots | `Dal.Sharding.vanishing_poly_roots` | **resolved** (proved) |
-| G7 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **resolved** (proved) |
+| G7/G11 — serialize_injective (S1) | `Dal.Serialization.serialize_injective` | **resolved** (proved) |
 | S4 — shard_recovery | `Dal.ReedSolomon.shard_recovery` | **resolved** (proved) |
 | P1 — rs_decoding_succeeds | `Dal.Protocol.rs_decoding_succeeds` | **resolved** (proved) |
 | P2 — page_verification_unique | `Dal.Protocol.page_verification_unique` | **resolved** (proved) |
-| S1 re-export | `Dal.Properties.s1_serialize_injective` | **resolved** (delegates to `Dal.Serialization.serialize_injective`) |
-| S2 re-export (union) | `Dal.Properties.s2_coset_partition` | **resolved** (delegates to `Dal.Sharding.coset_partition`) |
-| S2 re-export (disjoint) | `Dal.Properties.s2_cosets_disjoint` | **resolved** (delegates to `Dal.Sharding.cosets_disjoint`) |
-| S3 re-export | `Dal.Properties.s3_vanishing_poly_roots` | **resolved** (delegates to `Dal.Sharding.vanishing_poly_roots`) |
-| S4 re-export | `Dal.Properties.s4_shard_recovery` | **resolved** (delegates to `Dal.ReedSolomon.shard_recovery`) |
-| P2 re-export | `Dal.Properties.p2_page_verification_unique` | **resolved** (delegates to `Dal.Protocol.page_verification_unique`) |
-| P1 re-export | `Dal.Properties.p1_rs_decoding_succeeds` | **resolved** (delegates to `Dal.Protocol.rs_decoding_succeeds`) |
+| G8 — shardRemainder, proveShardEval, verifyShardEval | `Dal.KZG` | **resolved** (axioms) |
+| G9 — verifyShardEval_soundness (A7) | `Dal.KZG.verifyShardEval_soundness` | **resolved** (axiom) |
+| G10 — shard_verification_recovery (P3) | `Dal.Protocol.shard_verification_recovery` | **resolved** (proved) |
+| S1 re-export | `Dal.Properties.s1_serialize_injective` | **resolved** |
+| S2 re-export (union) | `Dal.Properties.s2_coset_partition` | **resolved** |
+| S2 re-export (disjoint) | `Dal.Properties.s2_cosets_disjoint` | **resolved** |
+| S3 re-export | `Dal.Properties.s3_vanishing_poly_roots` | **resolved** |
+| S4 re-export | `Dal.Properties.s4_shard_recovery` | **resolved** |
+| P2 re-export | `Dal.Properties.p2_page_verification_unique` | **resolved** |
+| P1 re-export | `Dal.Properties.p1_rs_decoding_succeeds` | **resolved** |
+| P3 re-export | `Dal.Properties.p3_shard_verification_recovery` | **resolved** |
 
 ## Open KB obligations with no Lean counterpart
 
-None. All properties listed in `kb/properties.md` now have corresponding Lean
-theorems proved in their respective modules and re-exported from `Dal.Properties`.
-The project is sorry-free across all nine Lean files.
+G12 (completeness axioms) and G13 (round-trip theorem) remain unstarted. Neither
+is required for the current formalization scope; they are tracked in `kb/gaps.md`.
 
 ## Verdict
 
-All clear. The formalization is sorry-free across all nine project files
-(eight `Dal/` modules plus `Dal.lean`). All main theorems P1, P2, S1–S4 are
-proved without `sorry` and re-exported from `Dal.Properties`. No open sorry
-obligations remain.
+All clear. The formalization is sorry-free across all nine project files. All main
+theorems S1–S4, P1–P3 are proved without `sorry` and re-exported from
+`Dal.Properties`. No open sorry obligations remain.
