@@ -152,8 +152,8 @@ formalization pass. No Lean code exists for any of them yet.
 - **Status**: `unstarted`
 - **Blocked by**: G8 (the types must exist first)
 - **Note**: Multi-reveal analogue of A1 (`verifyEval_soundness`). Rests on `d`-SDH
-  like A1. Must be declared as `axiom` — requires **explicit human approval** per
-  [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md) before adding to Lean.
+  like A1. Approved for declaration as a Lean `axiom` (2026-03-25). See
+  [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
   The axiom also implies a degree bound: the committed `p` satisfies
   `p.natDegree ≤ d` (inherited from the commitment).
 

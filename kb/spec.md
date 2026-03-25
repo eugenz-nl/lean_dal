@@ -148,10 +148,10 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
   where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`.
   **Lean status**: not yet declared. Planned in gap G8.
 
-**Shard soundness axiom (planned, not yet in Lean)**:
+**Shard soundness axiom**:
 - **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
   This is the multi-reveal analogue of A1. Like A1/A3/A6, it rests on the `d`-SDH
-  assumption and must be declared as an `axiom`. Planned in gap G9.
+  assumption and is declared as an `axiom`. Approved 2026-03-25. See gap G9.
 
 ### S4 helper functions
 

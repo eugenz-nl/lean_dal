@@ -148,7 +148,7 @@ dal/
   [decisions/002-kzg-over-poly.md](decisions/002-kzg-over-poly.md).
 - **Planned (gap G8/G9)**: `shardRemainder`, `proveShardEval`, `verifyShardEval`
   as `opaque` declarations, and `verifyShardEval_soundness` as axiom A7.
-  Requires explicit human approval before adding (per Decision 001).
+  Approved 2026-03-25 (per Decision 001).
 
 ### `Dal/Sharding.lean`
 - Defines `Ω : Fin s → Finset 𝔽_r` (the `s` cosets).

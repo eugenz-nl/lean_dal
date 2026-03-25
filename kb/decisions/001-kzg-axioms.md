@@ -44,25 +44,26 @@ from first principles in Lean.
 - The `Dal/KZG.lean` module contains four `axiom` declarations: A1, A2, A3, A6.
   *(Note: the original decision text said "exactly three"; A2 was overlooked.
   Since `proveEval` is opaque, A2 cannot be proved and must also be an axiom.)*
-- The soundness of P1 and P2 is conditional on these axioms.
+- A fifth axiom A7 (`verifyShardEval_soundness`) is approved and planned for
+  `Dal/KZG.lean` as part of gaps G8–G10.
+- The soundness of P1 and P2 is conditional on A1–A3, A6. P3 will additionally
+  require A7.
 - Any future work that eliminates these axioms (e.g., by importing a verified
   cryptography library) can do so by replacing the axiom declarations with theorems.
 
 ## What NOT to do
 
-- Do not assert additional axioms beyond A1, A2, A3, A6 without explicit human approval.
+- Do not assert additional axioms beyond A1, A2, A3, A6, A7 without explicit human approval.
 - A4 (interpolation correctness) and A5 (polynomial uniqueness) are provable from
   Mathlib and must not be axiomatized.
 
-## Planned extension: A7 (shard eval soundness)
-
-A seventh axiom is planned but **not yet approved**:
+## Extension: A7 (shard eval soundness) — approved 2026-03-25
 
 - **A7** (shard eval soundness): `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
 
 This is the multi-reveal analogue of A1, underpinning P3 (shard verification implies
-recovery). Like A1/A3/A6, it rests on the `d`-SDH assumption. It must not be added
-to `Dal/KZG.lean` without explicit human approval. See gap G9 in `kb/gaps.md`.
+recovery). Like A1/A3/A6, it rests on the `d`-SDH assumption. It is approved for
+declaration as a Lean `axiom` in `Dal/KZG.lean`. See gaps G8–G10 in `kb/gaps.md`.
 
 ## KB changes (required for `implemented` status)
 

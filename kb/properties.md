@@ -211,7 +211,7 @@ shard evaluation values `vs : Fin s → Fin l → Fr`, and shard proofs `πs : F
 - **Lean target**: `Dal.Protocol.shard_verification_recovery` (planned)
 - **Status**: `not started`
 - **Dependencies**: G8 (shardRemainder, proveShardEval, verifyShardEval declared in KZG),
-  G9 (verifyShardEval_soundness axiom A7)
+  G9 (verifyShardEval_soundness axiom A7 — approved 2026-03-25)
 - **Proof plan**: A7 for each `i ∈ I` gives candidates; A6 collapses to unique `p`.
   S4 gives `interpolate(cosetPoints I, shardVals I vs) = p`. Degree bound `p.natDegree ≤ d`
   comes from A7 (the candidate has degree `≤ d` from its KZG commitment). Distinctness
