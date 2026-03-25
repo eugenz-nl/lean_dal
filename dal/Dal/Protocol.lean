@@ -40,7 +40,7 @@ The full invariant statements are given by the theorem signatures below.
 
 namespace Dal.Protocol
 
-open Dal.Field Dal.Poly Dal.KZG Dal.Sharding Dal.ReedSolomon Polynomial
+open Dal.Field Dal.Poly Dal.KZG Dal.Sharding Dal.ReedSolomon Dal.Serialization Polynomial
 
 /-! ### P2: Page verification uniqueness -/
 
@@ -165,5 +165,55 @@ theorem shard_verification_recovery
   -- Existence and uniqueness by A6
   exact ⟨p, ⟨hpc, hall_prove, hall_eval, hint⟩,
          fun q ⟨hqc, _, _, _⟩ => commit_binding q p (hqc.trans hpc.symm)⟩
+
+/-! ### G13: End-to-end round-trip -/
+
+/-- **G13 — Round-trip**: bytes → serialize → interpolate → commit →
+    verify shards → interpolate → deserialize → bytes.
+
+    If commitment `c` was made to the polynomial interpolating `serialize b` at
+    distinct nodes `xs`, and `k/l` shard proofs all verify against `c`, then
+    deserializing the recovered polynomial's evaluations at `xs` gives back `b`.
+
+    **Proof**: P3 yields the unique `p` with `commit p = c`.  A6 identifies `p`
+    with the interpolant of `serialize b` at `xs`.  A4 recovers the evaluations
+    `eval p (xs i) = (serialize b) (Fin.cast d_succ_eq_k i)` at each node.
+    Composing with `Fin.cast d_succ_eq_k.symm` and unfolding the cast gives
+    `serialize b`, and `deserialize_left_inverse` closes the goal. -/
+theorem round_trip
+    (b : Bytes)
+    (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (c : G1) (π_deg : G1)
+    (I : Finset (Fin s)) (hI : I.card = k / l)
+    (vs : Fin s → Fin l → Fr) (πs : Fin s → G1)
+    (hc : commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) = c)
+    (hdeg : verifyDegree c d π_deg = true)
+    (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
+    deserialize (fun i : Fin k =>
+        Polynomial.eval (xs (Fin.cast d_succ_eq_k.symm i))
+          (interpolate (cosetPoints I hI) (shardVals I hI vs))) = b := by
+  -- The polynomial committed to
+  set q := interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k) with hq_def
+  -- P3: extract the unique recovered polynomial
+  obtain ⟨p, ⟨hpc, _, _, hint⟩, _⟩ :=
+    shard_verification_recovery I hI c π_deg vs πs hdeg hverify
+  -- A6: q = p (both committed to c)
+  have hqp : q = p := commit_binding q p (hc.trans hpc.symm)
+  -- The recovered interpolant equals q
+  have hrec : interpolate (cosetPoints I hI) (shardVals I hI vs) =
+      interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k) :=
+    hint.trans (hqp.symm.trans hq_def)
+  -- Rewrite the interpolant in the goal
+  simp_rw [hrec]
+  -- Evaluate using A4: interpolate xs ys at xs i = ys i
+  have hfun : (fun i : Fin k =>
+      Polynomial.eval (xs (Fin.cast d_succ_eq_k.symm i))
+        (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k))) = serialize b := by
+    funext i
+    rw [interpolate_eval xs _ hxs (Fin.cast d_succ_eq_k.symm i)]
+    simp only [Function.comp]
+    congr 1
+  rw [hfun]
+  exact deserialize_left_inverse b
 
 end Dal.Protocol

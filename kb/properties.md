@@ -263,6 +263,31 @@ verifyDegree c d π_deg = true
 
 ---
 
+### G13: End-to-end round-trip
+
+**Statement**: Given `b : Bytes`, distinct nodes `xs : Fin (d+1) → Fr`, commitment
+`c` to the interpolant of `serialize b` at `xs`, degree proof `π_deg`, index set `I`
+with `|I| = k/l`, shard values `vs`, and proofs `πs` all verifying against `c`:
+
+```
+commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) = c
+→ verifyDegree c d π_deg = true
+→ (∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true)
+→ deserialize (fun i =>
+      eval (xs (Fin.cast d_succ_eq_k.symm i))
+           (interpolate (cosetPoints I hI) (shardVals I hI vs))) = b
+```
+
+- **Lean targets**: `Dal.Serialization.deserialize`, `Dal.Serialization.deserialize_left_inverse`,
+  `Dal.Field.d_succ_eq_k`, `Dal.Protocol.round_trip`, `Dal.Properties.g13_round_trip`
+- **Status**: `proved`
+- **Proof**: P3 gives the unique `p` with `commit p = c`. A6 identifies `p` with
+  `interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)`. A4 recovers the evaluations.
+  Cast composition (`Fin.cast d_succ_eq_k ∘ Fin.cast d_succ_eq_k.symm = id`) gives
+  back `serialize b`. `deserialize_left_inverse` closes the goal.
+
+---
+
 ## Invariant preservation checklist
 
 When modifying any Lean file, verify:

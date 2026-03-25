@@ -210,11 +210,19 @@ formalization pass. No Lean code exists for any of them yet.
 - **Scope**: `Dal/Protocol.lean` — the full DAL pipeline is:
   `bytes → serialize → scalars → interpolate → poly → commit → … → verify shards → interpolate → poly → evaluate → scalars → deserialize → bytes`.
   The formalization proves individual links (S1, P1, P3) but not their composition.
-- **Status**: `unstarted`
-- **Blocked by**: G12 (completeness axioms) needed to show the prover's proofs
-  succeed; G11 (interleaved serialization) needed for page-level round-trip.
-- **Scope of fix**: Define `deserialize : (Fin k → Fr) → Bytes` as a left inverse
-  of `serialize`; prove `deserialize (serialize b) = b`; compose with P3 and S4.
+- **Status**: `resolved`
+- **Completed**:
+  - `Dal/Serialization.lean`: `deserialize` defined as `Function.invFun serialize`;
+    `deserialize_left_inverse` proved via `Function.leftInverse_invFun serialize_injective`.
+  - `Dal/Field.lean`: `d_succ_eq_k : d + 1 = k` added as a public lemma (used to
+    cast between `Fin (d+1)` and `Fin k` in the round-trip).
+  - `Dal/Protocol.lean`: `round_trip` theorem proved — given `hc : commit (interpolate xs
+    (serialize b ∘ Fin.cast d_succ_eq_k)) = c`, shard verification, and degree proof,
+    `deserialize (fun i => eval (xs (Fin.cast d_succ_eq_k.symm i)) (interpolate (cosetPoints I hI) ...)) = b`.
+    Proof: P3 → unique `p`; A6 → `p = interpolate xs (serialize b ∘ ...)`; A4 recovers
+    evaluations; cast composition gives `serialize b`; `deserialize_left_inverse` closes.
+  - `Dal/Properties.lean`: `g13_round_trip` re-exports the theorem.
+  Zero sorry. Build clean.
 
 ---
 

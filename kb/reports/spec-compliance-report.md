@@ -1,7 +1,7 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-25
-run: 13
+run: 14
 status: clean
 ---
 
@@ -9,7 +9,10 @@ status: clean
 
 ## Changes since last run
 
-Since run 12, G12 was resolved: `verifyEval_complete` (A1c), `proveDegree_complete`
+Since run 13, G13 was resolved: `deserialize`, `deserialize_left_inverse`, `d_succ_eq_k`,
+`round_trip`, and `g13_round_trip` added. Coverage matrix updated.
+
+Since run 12, G12 was also resolved: `verifyEval_complete` (A1c), `proveDegree_complete`
 (A3c), and `verifyShardEval_complete` (A7c) added as axioms in `Dal/KZG.lean` and
 re-exported from `Dal/Properties.lean`. Coverage matrix updated.
 
@@ -129,5 +132,9 @@ None.
 | A1c re-export | properties.md | `Dal.Properties.a1c_verifyEval_complete` | axiom |
 | A3c re-export | properties.md | `Dal.Properties.a3c_proveDegree_complete` | axiom |
 | A7c re-export | properties.md | `Dal.Properties.a7c_verifyShardEval_complete` | axiom |
+| `deserialize` function | gaps.md § G13 | `Dal.Serialization.deserialize` | proved |
+| `deserialize_left_inverse` | gaps.md § G13 | `Dal.Serialization.deserialize_left_inverse` | proved |
+| `d_succ_eq_k` | gaps.md § G13 | `Dal.Field.d_succ_eq_k` | proved |
+| G13: End-to-end round-trip | gaps.md § G13 | `Dal.Protocol.round_trip` | proved |
+| G13 re-export | gaps.md § G13 | `Dal.Properties.g13_round_trip` | proved |
 | `rsDecode` function | spec.md § Reed-Solomon | — | not started (alias for `interpolate`; lower priority) |
-| G13: End-to-end round-trip | gaps.md § G13 | — | not started |

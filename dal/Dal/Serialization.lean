@@ -236,4 +236,17 @@ theorem serialize_injective : Function.Injective serialize := by
       (hchunk ⟨(m % page_size) / 31 * pages_per_slot + m / page_size, hscalar_lt⟩)
       ⟨(m % page_size) % 31, Nat.mod_lt _ (by norm_num)⟩)
 
+/-! ### Deserialization -/
+
+/-- The left inverse of `serialize`: maps a scalar array back to bytes.
+    Defined via `Function.invFun`; for scalar arrays outside the image of `serialize`,
+    returns an arbitrary `Bytes` value. -/
+noncomputable def deserialize : (Fin k → Fr) → Bytes :=
+  Function.invFun serialize
+
+/-- `deserialize` is a left inverse of `serialize`: round-tripping through
+    serialization and deserialization recovers the original byte sequence. -/
+lemma deserialize_left_inverse (b : Bytes) : deserialize (serialize b) = b :=
+  Function.leftInverse_invFun serialize_injective b
+
 end Dal.Serialization

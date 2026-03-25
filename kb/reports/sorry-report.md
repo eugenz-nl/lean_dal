@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-25
-run: 12
+run: 13
 status: clean
 ---
 
@@ -9,12 +9,12 @@ status: clean
 
 ## Changes since last run
 
-`Dal/KZG.lean` gained three completeness axioms (G12 resolved): `verifyEval_complete`
-(A1c), `proveDegree_complete` (A3c), `verifyShardEval_complete` (A7c). These are
-declared as `axiom`; no `sorry` introduced. `Dal/Properties.lean` re-exports them
-as `a1c_verifyEval_complete`, `a3c_proveDegree_complete`, `a7c_verifyShardEval_complete`.
+G13 resolved: `deserialize` and `deserialize_left_inverse` added to
+`Dal/Serialization.lean`; `d_succ_eq_k` added to `Dal/Field.lean`; `round_trip`
+proved in `Dal/Protocol.lean`; re-exported as `g13_round_trip` in
+`Dal/Properties.lean`. No `sorry` introduced.
 
-KB obligation cross-check updated to include G12 entries.
+KB obligation cross-check updated to include G13 entries.
 
 ## Summary
 
@@ -67,13 +67,18 @@ KB obligation cross-check updated to include G12 entries.
 | A3c re-export | `Dal.Properties.a3c_proveDegree_complete` | **resolved** |
 | A7c re-export | `Dal.Properties.a7c_verifyShardEval_complete` | **resolved** |
 
+| G13 — deserialize | `Dal.Serialization.deserialize` | **resolved** (defined) |
+| G13 — deserialize_left_inverse | `Dal.Serialization.deserialize_left_inverse` | **resolved** (proved) |
+| G13 — d_succ_eq_k | `Dal.Field.d_succ_eq_k` | **resolved** (proved) |
+| G13 — round_trip | `Dal.Protocol.round_trip` | **resolved** (proved) |
+| G13 — g13_round_trip re-export | `Dal.Properties.g13_round_trip` | **resolved** |
+
 ## Open KB obligations with no Lean counterpart
 
-G13 (end-to-end round-trip theorem) remains unstarted. Tracked in `kb/gaps.md`.
+None. All gaps G1–G13 are resolved. The formalization is complete.
 
 ## Verdict
 
-All clear. The formalization is sorry-free across all nine project files. All main
-theorems S1–S4, P1–P3 and completeness axioms A1c, A3c, A7c are exported from
-`Dal.Properties`. No open sorry obligations remain. Only G13 (round-trip) is
-unstarted.
+All clear. The formalization is sorry-free across all nine project files. All
+theorems S1–S4, P1–P3, G13 (round-trip), and completeness axioms A1c, A3c, A7c
+are exported from `Dal.Properties`. All gaps G1–G13 are resolved.

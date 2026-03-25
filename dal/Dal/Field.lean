@@ -106,6 +106,12 @@ axiom s_pos : 0 < s
 /-- `l` is positive. -/
 axiom l_pos : 0 < l
 
+/-! ### Derived parameter facts -/
+
+/-- `d + 1 = k`: the degree bound plus one equals the message length. -/
+lemma d_succ_eq_k : d + 1 = k := by
+  have := d_eq; have := k_pos; omega
+
 /-! ### Scalar field -/
 
 /-- The scalar field `𝔽_r = ℤ/rℤ`. -/

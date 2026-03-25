@@ -22,6 +22,7 @@ listed here is proved without `sorry`; the proofs are in the respective modules.
 | A1c | Eval completeness (verifier)      | `Dal.KZG`             | axiom   |
 | A3c | Degree completeness               | `Dal.KZG`             | axiom   |
 | A7c | Shard eval completeness           | `Dal.KZG`             | axiom   |
+| G13 | End-to-end round-trip             | `Dal.Protocol`        | proved  |
 
 -/
 
@@ -116,6 +117,26 @@ theorem p3_shard_verification_recovery
                  (∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j) ∧
                  Dal.Poly.interpolate (cosetPoints I hI) (shardVals I hI vs) = p :=
   Dal.Protocol.shard_verification_recovery I hI c π_deg vs πs hdeg hverify
+
+/-! ### G13: End-to-end round-trip -/
+
+/-- **G13**: If `c` commits to the interpolant of `serialize b` at `xs`, and `k/l`
+    shard proofs verify against `c`, then deserializing the recovered polynomial's
+    evaluations at `xs` gives back `b`. -/
+theorem g13_round_trip
+    (b : Dal.Serialization.Bytes)
+    (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (c : G1) (π_deg : G1)
+    (I : Finset (Fin s)) (hI : I.card = k / l)
+    (vs : Fin s → Fin l → Fr) (πs : Fin s → G1)
+    (hc : commit (Dal.Poly.interpolate xs
+        (Dal.Serialization.serialize b ∘ Fin.cast d_succ_eq_k)) = c)
+    (hdeg : verifyDegree c d π_deg = true)
+    (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true) :
+    Dal.Serialization.deserialize (fun i : Fin k =>
+        Polynomial.eval (xs (Fin.cast d_succ_eq_k.symm i))
+          (Dal.Poly.interpolate (cosetPoints I hI) (shardVals I hI vs))) = b :=
+  Dal.Protocol.round_trip b xs hxs c π_deg I hI vs πs hc hdeg hverify
 
 /-! ### Completeness axioms (A1c, A3c, A7c) -/
 
