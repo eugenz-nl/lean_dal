@@ -133,6 +133,26 @@ axiom verifyDegree_soundness (c π : G1) (bound : ℕ) :
 axiom commit_binding (p q : Poly) :
     commit p = commit q → p = q
 
+/-- **A1c — Eval completeness (verifier)**: an honest prover's evaluation proof always
+    passes verification. Axiomatized because `verifyEval` is opaque; follows from the
+    algebraic correctness of the KZG pairing equation. -/
+axiom verifyEval_complete (p : Poly) (x : Fr) (π : G1) :
+    proveEval p x (Polynomial.eval x p) = some π →
+    verifyEval x (Polynomial.eval x p) (commit p) π = true
+
+/-- **A3c — Degree completeness**: if `p.natDegree ≤ bound`, then `proveDegree`
+    produces a proof that `verifyDegree` accepts. Axiomatized because both functions
+    are opaque; follows from algebraic correctness of the degree proof construction. -/
+axiom proveDegree_complete (p : Poly) (bound : ℕ) :
+    p.natDegree ≤ bound →
+    ∃ π : G1, proveDegree p bound = some π ∧ verifyDegree (commit p) bound π = true
+
+/-- **A7c — Shard eval completeness**: an honest prover's shard proof always passes
+    verification. Axiomatized because `verifyShardEval` is opaque; follows from the
+    algebraic correctness of the multi-reveal pairing equation. -/
+axiom verifyShardEval_complete (p : Poly) (i : Fin s) :
+    verifyShardEval (commit p) i (fun j => shardEval p i j) (proveShardEval p i) = true
+
 /-- **A7 — Shard eval soundness**: a valid shard proof implies the existence of
     a committed polynomial whose evaluations on `Ω_i` equal the claimed values.
     Multi-reveal analogue of A1. Rests on the `d`-SDH assumption.

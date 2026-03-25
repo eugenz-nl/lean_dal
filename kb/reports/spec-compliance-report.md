@@ -1,7 +1,7 @@
 ---
 auditor: spec-compliance-auditor
 date: 2026-03-25
-run: 12
+run: 13
 status: clean
 ---
 
@@ -9,7 +9,11 @@ status: clean
 
 ## Changes since last run
 
-Since run 11, the following gaps were resolved:
+Since run 12, G12 was resolved: `verifyEval_complete` (A1c), `proveDegree_complete`
+(A3c), and `verifyShardEval_complete` (A7c) added as axioms in `Dal/KZG.lean` and
+re-exported from `Dal/Properties.lean`. Coverage matrix updated.
+
+Since run 11, the following gaps were also resolved (carried forward):
 
 - **G8 resolved** — `shardRemainder`, `proveShardEval`, `verifyShardEval` declared as
   axioms in `Dal/KZG.lean`. Coverage matrix updated.
@@ -90,7 +94,10 @@ None.
 | A2: Eval completeness | properties.md | `Dal.KZG.proveEval_complete` | axiom |
 | A3: Degree soundness | properties.md | `Dal.KZG.verifyDegree_soundness` | axiom |
 | A6: Commitment binding | properties.md | `Dal.KZG.commit_binding` | axiom |
+| A1c: Eval completeness (verifier) | properties.md | `Dal.KZG.verifyEval_complete` | axiom |
+| A3c: Degree completeness | properties.md | `Dal.KZG.proveDegree_complete` | axiom |
 | A7: Shard eval soundness | properties.md | `Dal.KZG.verifyShardEval_soundness` | axiom |
+| A7c: Shard eval completeness | properties.md | `Dal.KZG.verifyShardEval_complete` | axiom |
 | `cosetPoint` function | spec.md § Sharding | `Dal.Sharding.cosetPoint` | proved |
 | `Ω` (coset finset) | spec.md § Sharding | `Dal.Sharding.Ω` | proved |
 | `Z` (vanishing polynomial) | spec.md § Sharding | `Dal.Sharding.Z` | proved |
@@ -119,6 +126,8 @@ None.
 | P2 re-export | properties.md | `Dal.Properties.p2_page_verification_unique` | proved |
 | P1 re-export | properties.md | `Dal.Properties.p1_rs_decoding_succeeds` | proved |
 | P3 re-export | properties.md | `Dal.Properties.p3_shard_verification_recovery` | proved |
+| A1c re-export | properties.md | `Dal.Properties.a1c_verifyEval_complete` | axiom |
+| A3c re-export | properties.md | `Dal.Properties.a3c_proveDegree_complete` | axiom |
+| A7c re-export | properties.md | `Dal.Properties.a7c_verifyShardEval_complete` | axiom |
 | `rsDecode` function | spec.md § Reed-Solomon | — | not started (alias for `interpolate`; lower priority) |
-| G12: Completeness axioms | gaps.md § G12 | — | not started |
-| G13: End-to-end round-trip | gaps.md § G13 | — | not started (blocked by G12) |
+| G13: End-to-end round-trip | gaps.md § G13 | — | not started |

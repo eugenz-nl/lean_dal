@@ -66,6 +66,25 @@ See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 - **Note**: Technically false in pure math; true under `d`-SDH. See
   [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
+### A1c: Eval completeness (verifier)
+`proveEval p x (eval p x) = some π → verifyEval x (eval p x) (commit p) π = true`
+
+- **Lean target**: `Dal.KZG.verifyEval_complete`
+- **Lean form**: `axiom`
+- **Status**: `axiom` (declared)
+- **Note**: Complements A2 (which ensures `proveEval` produces a proof when
+  `eval p x = y`) by guaranteeing that proof also passes `verifyEval`.
+  Axiomatized because `verifyEval` is opaque; follows from algebraic correctness
+  of the KZG pairing equation, not from hardness assumptions.
+
+### A3c: Degree completeness
+`p.natDegree ≤ bound → ∃ π, proveDegree p bound = some π ∧ verifyDegree (commit p) bound π = true`
+
+- **Lean target**: `Dal.KZG.proveDegree_complete`
+- **Lean form**: `axiom`
+- **Status**: `axiom` (declared)
+- **Note**: Axiomatized because `proveDegree` and `verifyDegree` are opaque.
+
 ### A7: Shard eval soundness
 `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
 
@@ -76,6 +95,16 @@ See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
   A7's conclusion: the multi-reveal verification equation does not enforce a degree
   bound (review finding F4). P3 instead requires an explicit `verifyDegree`
   hypothesis, mirroring P1. Approved 2026-03-25.
+
+### A7c: Shard eval completeness
+`verifyShardEval (commit p) i (fun j => shardEval p i j) (proveShardEval p i) = true`
+
+- **Lean target**: `Dal.KZG.verifyShardEval_complete`
+- **Lean form**: `axiom`
+- **Status**: `axiom` (declared)
+- **Note**: Multi-reveal analogue of A1c. Axiomatized because `verifyShardEval`
+  and `proveShardEval` are opaque; follows from algebraic correctness of the
+  multi-reveal pairing equation.
 
 ---
 
@@ -238,7 +267,7 @@ verifyDegree c d π_deg = true
 
 When modifying any Lean file, verify:
 
-- [ ] A1–A7 are still present as `axiom` or proved statements
+- [ ] A1–A7 and A1c, A3c, A7c are still present as `axiom` declarations
 - [ ] P1, P2, and P3 still type-check (even if `sorry`-bodied)
 - [ ] S1–S4 still type-check
 - [ ] No existing proved theorem has been weakened (statement made strictly weaker)

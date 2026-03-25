@@ -195,15 +195,15 @@ formalization pass. No Lean code exists for any of them yet.
 - **Scope**: The formalization proves soundness ("if verification passes, then a
   valid witness exists") but not completeness ("an honest prover's proofs always
   pass verification"). Missing axioms:
-  - `verifyEval_complete` (A1-completeness): `proveEval p x (eval p x) = some π → verifyEval x (eval p x) (commit p) π = true`
-    *(A2 ensures `proveEval` produces a proof when `eval p x = y`, but does not
-    guarantee `verifyEval` accepts it.)*
-  - `proveDegree_complete` (A3-completeness): `p.natDegree ≤ d → ∃ π, proveDegree p d = some π ∧ verifyDegree (commit p) d π = true`
-  - `verifyShardEval_complete` (A7-completeness): `(∀ j, shardEval p i j = vs j) → verifyShardEval (commit p) i vs (proveShardEval p i) = true`
-- **Status**: `unstarted`
-- **Impact**: Without completeness, the formalization proves the scheme is secure
-  (soundness + binding) but not that it works for honest participants. No existing
-  theorem is invalidated; these axioms would add the positive direction.
+  - `verifyEval_complete` (A1c): `proveEval p x (eval p x) = some π → verifyEval x (eval p x) (commit p) π = true`
+  - `proveDegree_complete` (A3c): `p.natDegree ≤ d → ∃ π, proveDegree p d = some π ∧ verifyDegree (commit p) d π = true`
+  - `verifyShardEval_complete` (A7c): `verifyShardEval (commit p) i (fun j => shardEval p i j) (proveShardEval p i) = true`
+- **Status**: `resolved`
+- **Completed**: All three declared as `axiom` in `Dal/KZG.lean` (A1c, A3c, A7c)
+  and re-exported as theorems from `Dal/Properties.lean`. These are axiomatized
+  because all KZG functions are opaque; completeness follows from the algebraic
+  correctness of the pairing equations but cannot be proved in pure Lean.
+  Zero sorry. Build clean.
 
 ### G13: End-to-end round-trip theorem (Finding F3)
 

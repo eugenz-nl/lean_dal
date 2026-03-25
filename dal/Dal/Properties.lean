@@ -10,15 +10,18 @@ listed here is proved without `sorry`; the proofs are in the respective modules.
 
 ## Summary of properties
 
-| ID | Name                              | Module                | Status  |
-|----|-----------------------------------|-----------------------|---------|
-| S1 | Serialization injectivity         | `Dal.Serialization`   | proved  |
-| S2 | Coset partition                   | `Dal.Sharding`        | proved  |
-| S3 | Vanishing polynomial roots        | `Dal.Sharding`        | proved  |
-| S4 | Shard recovery (MDS)              | `Dal.ReedSolomon`     | proved  |
-| P1 | RS decoding succeeds              | `Dal.Protocol`        | proved  |
-| P2 | Page verification uniqueness      | `Dal.Protocol`        | proved  |
-| P3 | Shard verification implies recovery | `Dal.Protocol`      | proved  |
+| ID  | Name                              | Module                | Status  |
+|-----|-----------------------------------|-----------------------|---------|
+| S1  | Serialization injectivity         | `Dal.Serialization`   | proved  |
+| S2  | Coset partition                   | `Dal.Sharding`        | proved  |
+| S3  | Vanishing polynomial roots        | `Dal.Sharding`        | proved  |
+| S4  | Shard recovery (MDS)              | `Dal.ReedSolomon`     | proved  |
+| P1  | RS decoding succeeds              | `Dal.Protocol`        | proved  |
+| P2  | Page verification uniqueness      | `Dal.Protocol`        | proved  |
+| P3  | Shard verification implies recovery | `Dal.Protocol`      | proved  |
+| A1c | Eval completeness (verifier)      | `Dal.KZG`             | axiom   |
+| A3c | Degree completeness               | `Dal.KZG`             | axiom   |
+| A7c | Shard eval completeness           | `Dal.KZG`             | axiom   |
 
 -/
 
@@ -113,5 +116,25 @@ theorem p3_shard_verification_recovery
                  (∀ i ∈ I, ∀ j : Fin l, shardEval p i j = vs i j) ∧
                  Dal.Poly.interpolate (cosetPoints I hI) (shardVals I hI vs) = p :=
   Dal.Protocol.shard_verification_recovery I hI c π_deg vs πs hdeg hverify
+
+/-! ### Completeness axioms (A1c, A3c, A7c) -/
+
+/-- **A1c**: An honest prover's evaluation proof always passes verification. -/
+theorem a1c_verifyEval_complete (p : Poly) (x : Fr) (π : G1) :
+    proveEval p x (Polynomial.eval x p) = some π →
+    verifyEval x (Polynomial.eval x p) (commit p) π = true :=
+  Dal.KZG.verifyEval_complete p x π
+
+/-- **A3c**: If `p.natDegree ≤ bound`, the prover can produce a degree proof that
+    verifies. -/
+theorem a3c_proveDegree_complete (p : Poly) (bound : ℕ) :
+    p.natDegree ≤ bound →
+    ∃ π : G1, proveDegree p bound = some π ∧ verifyDegree (commit p) bound π = true :=
+  Dal.KZG.proveDegree_complete p bound
+
+/-- **A7c**: An honest prover's shard proof always passes verification. -/
+theorem a7c_verifyShardEval_complete (p : Poly) (i : Fin s) :
+    verifyShardEval (commit p) i (fun j => shardEval p i j) (proveShardEval p i) = true :=
+  Dal.KZG.verifyShardEval_complete p i
 
 end Dal.Properties

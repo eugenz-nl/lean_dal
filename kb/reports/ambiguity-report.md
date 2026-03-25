@@ -1,7 +1,7 @@
 ---
 auditor: ambiguity-auditor
 date: 2026-03-25
-run: 14
+run: 15
 status: clean
 ---
 
@@ -9,7 +9,11 @@ status: clean
 
 ## Changes since last run
 
-Since run 13, the following items were resolved:
+Since run 14, G12 was resolved: A1c, A3c, A7c completeness axioms added to
+`Dal/KZG.lean` and re-exported from `Dal/Properties.lean`. `kb/properties.md`
+and `kb/gaps.md` updated accordingly. Consistency checks pass.
+
+Since run 13, the following items were also resolved (carried forward):
 
 - **I1 resolved** — `kb/gaps.md` G1 "Remaining" updated: `Dal/Properties.lean` moved
   from stub to completed, `p3_shard_verification_recovery` added. No stale description.
@@ -61,7 +65,7 @@ None.
 - [x] `kb/architecture.md` `Dal/Properties.lean` lists S1–S4, P1–P3 (7 theorems)
 - [x] `kb/gaps.md` G1 completed bullets include all nine modules
 - [x] `kb/gaps.md` G8, G9, G10, G11 all marked `resolved`
-- [x] `kb/gaps.md` G12 and G13 remain `unstarted` (correct)
+- [x] `kb/gaps.md` G12 marked `resolved`; G13 remains `unstarted` (correct)
 - [x] `kb/spec.md` A7 statement updated (no degree bound); P3 includes `verifyDegree` hypothesis
 - [x] `kb/decisions/001-kzg-axioms.md` lists A7 as approved axiom
 - [x] `slot_size_le` is now a derived lemma in `Dal/Serialization.lean`,

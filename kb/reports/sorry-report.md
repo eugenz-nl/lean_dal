@@ -1,7 +1,7 @@
 ---
 auditor: sorry-auditor
 date: 2026-03-25
-run: 11
+run: 12
 status: clean
 ---
 
@@ -9,12 +9,12 @@ status: clean
 
 ## Changes since last run
 
-`Dal/Serialization.lean` was completely rewritten (gap G11 resolved): page structure
-axioms added, `byteChunk` replaced with an interleaved layout, `serialize_injective`
-reproved. No `sorry` or `admit` was introduced. G8, G9, G10 (A7 and P3) were also
-completed since run 10; their Lean files have zero sorry.
+`Dal/KZG.lean` gained three completeness axioms (G12 resolved): `verifyEval_complete`
+(A1c), `proveDegree_complete` (A3c), `verifyShardEval_complete` (A7c). These are
+declared as `axiom`; no `sorry` introduced. `Dal/Properties.lean` re-exports them
+as `a1c_verifyEval_complete`, `a3c_proveDegree_complete`, `a7c_verifyShardEval_complete`.
 
-The KB obligation cross-check is updated to include G8/G9/G10 entries.
+KB obligation cross-check updated to include G12 entries.
 
 ## Summary
 
@@ -60,14 +60,20 @@ The KB obligation cross-check is updated to include G8/G9/G10 entries.
 | P2 re-export | `Dal.Properties.p2_page_verification_unique` | **resolved** |
 | P1 re-export | `Dal.Properties.p1_rs_decoding_succeeds` | **resolved** |
 | P3 re-export | `Dal.Properties.p3_shard_verification_recovery` | **resolved** |
+| G12 — verifyEval_complete (A1c) | `Dal.KZG.verifyEval_complete` | **resolved** (axiom) |
+| G12 — proveDegree_complete (A3c) | `Dal.KZG.proveDegree_complete` | **resolved** (axiom) |
+| G12 — verifyShardEval_complete (A7c) | `Dal.KZG.verifyShardEval_complete` | **resolved** (axiom) |
+| A1c re-export | `Dal.Properties.a1c_verifyEval_complete` | **resolved** |
+| A3c re-export | `Dal.Properties.a3c_proveDegree_complete` | **resolved** |
+| A7c re-export | `Dal.Properties.a7c_verifyShardEval_complete` | **resolved** |
 
 ## Open KB obligations with no Lean counterpart
 
-G12 (completeness axioms) and G13 (round-trip theorem) remain unstarted. Neither
-is required for the current formalization scope; they are tracked in `kb/gaps.md`.
+G13 (end-to-end round-trip theorem) remains unstarted. Tracked in `kb/gaps.md`.
 
 ## Verdict
 
 All clear. The formalization is sorry-free across all nine project files. All main
-theorems S1–S4, P1–P3 are proved without `sorry` and re-exported from
-`Dal.Properties`. No open sorry obligations remain.
+theorems S1–S4, P1–P3 and completeness axioms A1c, A3c, A7c are exported from
+`Dal.Properties`. No open sorry obligations remain. Only G13 (round-trip) is
+unstarted.
