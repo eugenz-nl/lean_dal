@@ -102,7 +102,7 @@ five security axioms (A1–A3, A6, A7). See [gaps.md](gaps.md) for the complete 
 ## Lake project
 
 ```
-dal/
+lean/
   lakefile.toml       # Project config: depends on Mathlib v4.29.0-rc1
   Dal.lean            # Top-level import of all modules
   Dal/

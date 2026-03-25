@@ -20,15 +20,15 @@ KB obligation cross-check updated to include G13 entries.
 
 | File | Untracked | Tracked | Structural |
 |------|-----------|---------|------------|
-| `dal/Dal/Field.lean` | 0 | 0 | 0 |
-| `dal/Dal/Poly.lean` | 0 | 0 | 0 |
-| `dal/Dal/KZG.lean` | 0 | 0 | 0 |
-| `dal/Dal/Sharding.lean` | 0 | 0 | 0 |
-| `dal/Dal/Serialization.lean` | 0 | 0 | 0 |
-| `dal/Dal/ReedSolomon.lean` | 0 | 0 | 0 |
-| `dal/Dal/Protocol.lean` | 0 | 0 | 0 |
-| `dal/Dal/Properties.lean` | 0 | 0 | 0 |
-| `dal/Dal.lean` | 0 | 0 | 0 |
+| `lean/Dal/Field.lean` | 0 | 0 | 0 |
+| `lean/Dal/Poly.lean` | 0 | 0 | 0 |
+| `lean/Dal/KZG.lean` | 0 | 0 | 0 |
+| `lean/Dal/Sharding.lean` | 0 | 0 | 0 |
+| `lean/Dal/Serialization.lean` | 0 | 0 | 0 |
+| `lean/Dal/ReedSolomon.lean` | 0 | 0 | 0 |
+| `lean/Dal/Protocol.lean` | 0 | 0 | 0 |
+| `lean/Dal/Properties.lean` | 0 | 0 | 0 |
+| `lean/Dal.lean` | 0 | 0 | 0 |
 | **Total** | **0** | **0** | **0** |
 
 ## KB obligation cross-check

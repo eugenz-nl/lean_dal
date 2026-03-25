@@ -7,7 +7,7 @@ status: draft
 # Knowledge Base: Lean Formalization of Tezos DAL
 
 This KB is the source of truth for the formalization project. The Lean files in
-`dal/` are the implementation of what is described here. If a Lean file contradicts
+`lean/` are the implementation of what is described here. If a Lean file contradicts
 this KB, the Lean file is wrong.
 
 ## Source material
@@ -64,5 +64,5 @@ Reports are **never** manually edited — they are owned by the auditor skills.
 
 ## Deterministic validation gate
 
-`lake build` in `dal/` must succeed with zero errors, zero warnings, and zero
+`lake build` in `lean/` must succeed with zero errors, zero warnings, and zero
 `sorry` occurrences before any task is considered complete.
