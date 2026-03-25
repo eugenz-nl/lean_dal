@@ -1,6 +1,6 @@
 ---
 title: Formalization Architecture
-last-updated: 2026-03-24
+last-updated: 2026-03-25
 status: draft
 ---
 
@@ -24,15 +24,21 @@ five security axioms (A1–A3, A6, A7). See [gaps.md](gaps.md) for the complete 
 
 ### Implementation notes for `Dal/Serialization.lean`
 
-- **`slot_size_le` not `slot_size_eq`**: The axiom is `slot_size ≤ k * 31` (not equality),
-  because the real Tezos deployment has `slot_size = 380832 = 31 × 12284 + 28`.
-- **`byteAt` is `noncomputable`**: it depends on the axiom `slot_size`, which is not
-  computable. `byteChunk` is also `noncomputable` by transitivity.
-- **`byteAt_eq` simp lemma**: `byteAt b m = b ⟨m, h⟩` when `h : m < slot_size`; proved
-  via `dif_pos h`. Used in `serialize_injective` to bridge the padding/non-padding cases.
-- **`reindex` step in `serialize_injective`**: uses `show` to expose the concrete `byteAt`
-  form (since `byteChunk` is definitionally `byteAt`), then `congr_arg (byteAt b)` with
-  an `omega` proof that `31 * (m / 31) + m % 31 = m`.
+- **`slot_size_le` is derived, not axiom**: `slot_size ≤ k * 31` follows from
+  `slot_size_le_pages` and `page_size_le_chunks` by two applications of
+  `Nat.mul_le_mul_left` and `pages_per_slot_mul_page_length`.
+- **`byteAt` is `noncomputable`**: it depends on axiom `slot_size`. `byteChunk` and
+  `serialize` are `noncomputable` by transitivity.
+- **`byteAt_eq` simp lemma**: `byteAt b m = b ⟨m, h⟩` when `h : m < slot_size`;
+  proved via `dif_pos h`. Used in `serialize_injective` to bridge padding/non-padding.
+- **`serialize_injective` proof structure** (interleaved layout): for `m < slot_size`,
+  compute `page = m / page_size`, `elt = (m % page_size) / 31`, `j = (m % page_size) % 31`.
+  The scalar index is `elt * pages_per_slot + page`. Three key `have` lemmas recover
+  `page` and `elt` from the scalar index via `Nat.add_mul_mod_self_left` and
+  `Nat.add_mul_div_left`, and reconstruct `m` from `page * page_size + elt * 31 + j`
+  via two applications of `Nat.div_add_mod` + `linarith`.
+- **No `let` bindings**: using `let page := ...` causes Lean not to unfold `.val`
+  in subsequent goals. Use explicit `Nat` expressions throughout.
 
 ### Implementation notes for `Dal/ReedSolomon.lean`
 
@@ -160,29 +166,36 @@ dal/
 
 ### `Dal/Serialization.lean`
 - Defines `Bytes := Fin slot_size → Fin 256` and `serialize : Bytes → (Fin k → Fr)`.
-- Adds two supporting axioms (beyond those in `Field.lean`):
-  - `slot_size_le : slot_size ≤ k * 31` — the `k` chunks together cover all `slot_size`
-    bytes, with at most 30 zero-padding bytes in the last chunk. Replaces the earlier
-    exact equality to accommodate the real Tezos deployment (`slot_size = 380832`,
-    last chunk is only 28 bytes).
-  - `bytes31_lt_r : 256^31 < r` — holds for BLS12-381 (`r ≈ 2^255 > 2^248`); ensures
-    the cast of a 31-byte chunk to `Fr` does not wrap around.
-- Defines `byteAt b m` — byte at position `m`, returning 0 for `m ≥ slot_size` (padding).
-- Defines `byteChunk b i j := byteAt b (31 * i + j)` — `j`-th byte of the `i`-th chunk.
-- Proves S1 (`serialize_injective`) via `Fintype.equivFin` injectivity and
-  `ZMod.val_cast_of_lt`.
-- The 31-bytes-per-scalar encoding is fixed in this module.
+- Declares page structure axioms: `pages_per_slot`, `page_size`, `page_length`
+  (and their positivity axioms), `pages_per_slot_mul_page_length` (`pages_per_slot *
+  page_length = k`), `slot_size_le_pages` (`slot_size ≤ pages_per_slot * page_size`),
+  `page_size_le_chunks` (`page_size ≤ page_length * 31`).
+- Derives `slot_size_le : slot_size ≤ k * 31` as a lemma from the page bounds
+  (not an axiom).
+- Adds `bytes31_lt_r : 256^31 < r` — holds for BLS12-381 (`r ≈ 2^255 > 2^248`);
+  ensures the cast of a 31-byte chunk to `Fr` does not wrap around.
+- Defines `byteAt b m` — byte at position `m`, returning 0 for `m ≥ slot_size`.
+- Defines `byteChunk b i j` with the **interleaved page layout** (gap G11):
+  scalar `i` → page `page = i % pages_per_slot`, element `elt = i / pages_per_slot`,
+  byte at `page * page_size + elt * 31 + j`. Matches `res[elt * pages_per_slot + page]`
+  in the OCaml implementation.
+- Proves S1 (`serialize_injective`) via `Fintype.equivFin` injectivity,
+  `ZMod.val_cast_of_lt`, and injectivity of the interleaved address map.
 
 ### `Dal/Protocol.lean`
-- Proves P1 (`rs_decoding_succeeds`) and P2 (`page_verification_unique`) from A1–A6.
+- Proves P1 (`rs_decoding_succeeds`), P2 (`page_verification_unique`), and P3
+  (`shard_verification_recovery`) from A1–A7 and S4.
 - P1 additionally requires `Function.Injective xs` (distinct evaluation points) for A4/A5.
-- `proveEval` returns `Option G1`, so proof conditions are `proveEval p x y = some π`.
+- P3 uses A7 for per-shard candidates, A3 for the degree bound (via an explicit
+  `verifyDegree` hypothesis, mirroring P1's structure), A6 for uniqueness, and S4
+  for the interpolant identity.
+- `proveEval` returns `Option G1`, so proof conditions use `= some (πs i)`.
 - This module imports all other modules.
 
 ### `Dal/Properties.lean`
-- Contains only the formal statements of P1, P2, S1–S4 (and their proofs, once
-  complete). Importing this file gives the full correctness guarantee.
-- All theorems here must be proved without `sorry` before the project is complete.
+- Re-exports the formal statements of S1–S4, P1–P3 (seven theorems total).
+  Importing this file gives the full correctness guarantee.
+- All theorems are proved without `sorry` by delegation to the underlying modules.
 
 ---
 
