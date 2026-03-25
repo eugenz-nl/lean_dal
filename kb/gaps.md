@@ -36,14 +36,18 @@ They must be addressed before the formalization is useful.
   `Serialization`, `ReedSolomon`, `Protocol`, `Properties`)
 - **Status**: `resolved`
 - **Completed**: `Dal/Field.lean` — `Fr`, all deployment parameters and
-  constraints, `ω`, `ω_isPrimitiveRoot`, and three derived theorems.
+  constraints, `ω`, `ω_isPrimitiveRoot`; derived lemmas `ω_pow_n`, `ω_orderOf`,
+  `ω_pow_inj`, `d_succ_eq_k`.
 - **Completed**: `Dal/Poly.lean` — `Poly` type alias, `interpolate` (wrapping
   `Lagrange.interpolate`), `interpolate_eval` (A4 eval), `interpolate_natDegree`
   (A4 degree), `poly_unique_of_eval` (A5). All proved without `sorry`.
 - **Completed**: `Dal/KZG.lean` — `G1`, `G2`, `GT` opaque types; `commit`,
-  `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree` as axioms; security
-  axioms A1 (`verifyEval_soundness`), A2 (`proveEval_complete`), A3
-  (`verifyDegree_soundness`), A6 (`commit_binding`). Zero sorry.
+  `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree`, `shardRemainder`,
+  `proveShardEval`, `verifyShardEval` as axioms; security axioms A1
+  (`verifyEval_soundness`), A2 (`proveEval_complete`), A3
+  (`verifyDegree_soundness`), A6 (`commit_binding`), A7
+  (`verifyShardEval_soundness`); completeness axioms A1c (`verifyEval_complete`),
+  A3c (`proveDegree_complete`), A7c (`verifyShardEval_complete`). Zero sorry.
 - **Completed**: `Dal/Sharding.lean` — `cosetPoint`, `Ω`, `Z`, `shardEval`
   definitions; `s_mul_l_eq_n`, `l_dvd_n`, `coset_index_lt`, `ωs_isPrimitiveRoot`
   lemmas; `vanishing_poly_roots` (S3), `coset_partition` and `cosets_disjoint`
@@ -53,18 +57,22 @@ They must be addressed before the formalization is useful.
   axioms); `slot_size_le` (derived lemma); `byteAt` (zero-padded); interleaved
   `byteChunk` (`page = i % pages_per_slot`, `elt = i / pages_per_slot`, byte at
   `page * page_size + elt * 31 + j`); `bytesToFr` (via `Fintype.equivFin`);
-  `serialize`; `serialize_injective` (S1). All proved without `sorry`.
+  `serialize`; `serialize_injective` (S1); `deserialize` (`Function.invFun
+  serialize`); `deserialize_left_inverse`. All proved without `sorry`.
   See G11 (resolved).
 - **Completed**: `Dal/ReedSolomon.lean` — `rsEncode`, `cosetPoints`, `shardVals`,
   `cosetPoint_mem_Ω`, `cosetPoints_injective`, `shard_recovery` (S4). All proved
   without `sorry`.
-- **Completed**: `Dal/Protocol.lean` — `page_verification_unique` (P2) and
-  `rs_decoding_succeeds` (P1). Both proved without `sorry` from A1–A6 via A4+A5.
-- **Completed**: `Dal/Properties.lean` — correctness certificate re-exporting all
-  seven proved invariants: `s1_serialize_injective`, `s2_coset_partition`,
+- **Completed**: `Dal/Protocol.lean` — `page_verification_unique` (P2),
+  `rs_decoding_succeeds` (P1), `shard_verification_recovery` (P3), and
+  `round_trip` (G13). All proved without `sorry` from A1–A7 and S4.
+- **Completed**: `Dal/Properties.lean` — correctness certificate re-exporting
+  eleven entries: `s1_serialize_injective`, `s2_coset_partition`,
   `s2_cosets_disjoint`, `s3_vanishing_poly_roots`, `s4_shard_recovery`,
-  `p2_page_verification_unique`, `p1_rs_decoding_succeeds`,
-  `p3_shard_verification_recovery`. Zero sorry.
+  `p1_rs_decoding_succeeds`, `p2_page_verification_unique`,
+  `p3_shard_verification_recovery`, `a1c_verifyEval_complete`,
+  `a3c_proveDegree_complete`, `a7c_verifyShardEval_complete`, `g13_round_trip`.
+  Zero sorry.
 - **Status**: `G1` is fully resolved. All modules in `Dal/` build clean with zero sorry.
 
 ---

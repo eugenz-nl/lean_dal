@@ -114,7 +114,7 @@ dal/
     Sharding.lean     # Cosets, vanishing polynomials, shard structure
     Serialization.lean # byte ↔ scalar array conversion
     Protocol.lean     # Top-level assembly: slot → shards → verify
-    Properties.lean   # Formal statements of P1, P2, S1–S4
+    Properties.lean   # Correctness certificate: S1–S4, P1–P3, G13, A1c/A3c/A7c
 ```
 
 ---
@@ -123,9 +123,10 @@ dal/
 
 ### `Dal/Field.lean`
 - Declares `𝔽_r` as `ZMod r` for the BLS12-381 scalar field prime `r`.
-- States and (if possible) proves existence of a primitive `n`-th root of unity `ω`
-  in `𝔽_r` (condition: `n | r - 1`).
-- Exports `ω`, basic field arithmetic.
+- Axiomatizes all deployment parameters (`r`, `k`, `n`, `s`, `l`, `α`, `slot_size`,
+  `d`) and their constraints.
+- Axiomatizes `ω : Fr` with `ω_isPrimitiveRoot : IsPrimitiveRoot ω n`.
+- Proves `ω_pow_n`, `ω_orderOf`, `ω_pow_inj`, and `d_succ_eq_k : d + 1 = k`.
 - **Does not** contain elliptic curve definitions.
 
 ### `Dal/Poly.lean`
@@ -146,16 +147,15 @@ dal/
 - References: `Field.lean`, `Poly.lean`, `Sharding.lean`.
 
 ### `Dal/KZG.lean`
-- Declares opaque types `G1`, `G2`, `GT` for BLS12-381 groups.
-- Declares the pairing `e : G1 → G2 → GT` as an `opaque` or `axiom`.
-- Declares `CK` (committing key) and `VK` (verifying key) as parameters.
-- Defines `commit`, `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree`.
-- Asserts A1, A2, A3, A6 as `axiom`. Proves A4, A5 (or references `Poly.lean`).
+- Declares opaque types `G1`, `G2`, `GT` for BLS12-381 groups (bare types only;
+  no pairing, no SRS, no group operations — these are internal to the opaque functions).
+- Declares `commit`, `proveEval`, `verifyEval`, `proveDegree`, `verifyDegree`,
+  `shardRemainder`, `proveShardEval`, `verifyShardEval` as opaque `axiom`s.
+- Asserts soundness axioms A1, A2, A3, A6, A7 as `axiom`.
+- Asserts completeness axioms A1c, A3c, A7c as `axiom` (gaps G12, resolved).
 - **Key design choice**: KZG functions operate on `Poly`, not raw byte arrays. See
   [decisions/002-kzg-over-poly.md](decisions/002-kzg-over-poly.md).
-- **Added (gaps G8/G9, resolved)**: `shardRemainder`, `proveShardEval`,
-  `verifyShardEval` as `axiom` declarations, and `verifyShardEval_soundness`
-  as axiom A7. Imports `Dal.Sharding` for `Fin s`, `Fin l`, `shardEval`.
+- Imports `Dal.Sharding` for `Fin s`, `Fin l`, `shardEval`.
 
 ### `Dal/Sharding.lean`
 - Defines `Ω : Fin s → Finset 𝔽_r` (the `s` cosets).
@@ -181,6 +181,8 @@ dal/
   in the OCaml implementation.
 - Proves S1 (`serialize_injective`) via `Fintype.equivFin` injectivity,
   `ZMod.val_cast_of_lt`, and injectivity of the interleaved address map.
+- Defines `deserialize := Function.invFun serialize`; proves
+  `deserialize_left_inverse` via `Function.leftInverse_invFun` + S1.
 
 ### `Dal/Protocol.lean`
 - Proves P1 (`rs_decoding_succeeds`), P2 (`page_verification_unique`), and P3
@@ -190,12 +192,16 @@ dal/
   `verifyDegree` hypothesis, mirroring P1's structure), A6 for uniqueness, and S4
   for the interpolant identity.
 - `proveEval` returns `Option G1`, so proof conditions use `= some (πs i)`.
+- Proves `round_trip` (G13): if `c` commits to the interpolant of `serialize b`
+  and shard proofs verify, then deserializing the recovered polynomial's evaluations
+  gives back `b`. Uses `d_succ_eq_k` to bridge `Fin (d+1)` and `Fin k`.
 - This module imports all other modules.
 
 ### `Dal/Properties.lean`
-- Re-exports the formal statements of S1–S4, P1–P3 (seven theorems total).
+- Re-exports all proved theorems and axioms: S1–S4, P1–P3, G13 (`g13_round_trip`),
+  and completeness axioms A1c, A3c, A7c (eleven entries total).
   Importing this file gives the full correctness guarantee.
-- All theorems are proved without `sorry` by delegation to the underlying modules.
+- All entries are either proved or declared as `axiom` without `sorry`.
 
 ---
 

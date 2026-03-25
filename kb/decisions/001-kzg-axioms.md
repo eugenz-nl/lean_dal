@@ -41,13 +41,14 @@ from first principles in Lean.
 
 ## Consequences
 
-- The `Dal/KZG.lean` module contains four `axiom` declarations: A1, A2, A3, A6.
+- `Dal/KZG.lean` now contains eight `axiom` declarations: A1, A2, A3, A6, A7
+  (soundness), and A1c, A3c, A7c (completeness).
   *(Note: the original decision text said "exactly three"; A2 was overlooked.
   Since `proveEval` is opaque, A2 cannot be proved and must also be an axiom.)*
-- A fifth axiom A7 (`verifyShardEval_soundness`) is approved and planned for
-  `Dal/KZG.lean` as part of gaps G8–G10.
-- The soundness of P1 and P2 is conditional on A1–A3, A6. P3 will additionally
-  require A7.
+- The soundness of P1 and P2 is conditional on A1–A3, A6. P3 additionally requires A7.
+- Completeness axioms A1c, A3c, A7c follow from algebraic correctness of the
+  pairing equations (not hardness assumptions) but are axiomatized because all
+  KZG functions are opaque.
 - Any future work that eliminates these axioms (e.g., by importing a verified
   cryptography library) can do so by replacing the axiom declarations with theorems.
 

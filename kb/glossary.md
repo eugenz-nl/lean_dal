@@ -1,6 +1,6 @@
 ---
 title: Glossary
-last-updated: 2026-03-23
+last-updated: 2026-03-25
 status: draft
 ---
 
@@ -95,13 +95,19 @@ by position. Used as the domain of `serialize`.
 
 **serialize**
 The injective map `Bytes → (Fin k → Fr)` that splits a slot into `k` field elements
-by packing 31 bytes per scalar. Positions `≥ slot_size` (the partial last chunk) are
-zero-padded. Injectivity is property S1.
+using the page-interleaved layout: scalar `i` comes from page `i % pages_per_slot`
+at element position `i / pages_per_slot`, with each element encoding 31 bytes.
+Positions beyond `slot_size` are zero-padded. Injectivity is property S1.
+
+**deserialize**
+The left inverse of `serialize`: `deserialize (serialize b) = b` for all `b : Bytes`.
+Defined as `Function.invFun serialize`. For scalar arrays outside the image of
+`serialize`, returns an arbitrary `Bytes` value.
 
 **slot_size_le**
-The Lean axiom `slot_size ≤ k * 31`: the `k` chunks together cover all `slot_size`
-bytes, with at most 30 zero-padding bytes in the last chunk. In the actual Tezos DAL
-deployment, `slot_size = 380832 = 31 × 12284 + 28` and `k = 12285`.
+The Lean **lemma** `slot_size ≤ k * 31`: derived from the page structure axioms
+(`slot_size_le_pages` and `page_size_le_chunks`). Not an axiom — proved from the
+page bounds. In the actual Tezos DAL deployment, `slot_size = 380832` and `k = 12285`.
 
 **bytes31_lt_r**
 The Lean axiom `256^31 < r`: any 31-byte big-endian integer is strictly less than

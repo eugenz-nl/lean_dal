@@ -139,14 +139,14 @@ POLY  p ∈ 𝔽_r[x],  deg p < k
 - **`shardRemainder : P → Fin s → P`** — the remainder `r_i` of degree `< l` such
   that `p = Z_i · q_i + r_i` (euclidean division by `Z_i`). Equivalently, `r_i` is
   the unique polynomial of degree `< l` agreeing with `p` on `Ω_i`.
-  **Lean status**: not yet declared. Planned in gap G8.
+  **Lean status**: declared as `axiom` in `Dal/KZG.lean` (gap G8 resolved).
 - **`proveShardEval : P → Fin s → Π`** — multi-reveal proof for coset `Ω_i`:
-  `π_i = [q_i(τ)]_1` where `q_i = (p - shardRemainder p i) / Z_i`
-  **Lean status**: not yet declared. Planned in gap G8.
+  `π_i = [q_i(τ)]_1` where `q_i = (p - shardRemainder p i) / Z_i`.
+  **Lean status**: declared as `axiom` in `Dal/KZG.lean` (gap G8 resolved).
 - **`verifyShardEval : C → Fin s → (Fin l → Y) → Π → B`** — checks
   `e(c - [r_i(τ)]_1, g_2) = e(π_i, [τ^l]_2 - [ω^{il}]_2)`
   where `r_i` is reconstructed from the given evaluations by inverse DFT on `Ω_i`.
-  **Lean status**: not yet declared. Planned in gap G8.
+  **Lean status**: declared as `axiom` in `Dal/KZG.lean` (gap G8 resolved).
 
 **Shard soundness axiom**:
 - **(A7 — Shard eval soundness)**: `verifyShardEval c i vs π = true → ∃ p, commit p = c ∧ proveShardEval p i = π ∧ ∀ j, shardEval p i j = vs j`
@@ -181,8 +181,9 @@ on `(i, j)` pairs satisfying `i ∈ I`, `j : Fin l` is acceptable, provided
 These are numbered S1–S6 here (following `docs/protocol.md`); in `properties.md`
 they are labelled A1–A6. They are grouped by their Lean status.
 
-**Axioms** (A1, A2, A3, A6) — KZG security rests on computational hardness; these
-cannot be proved in pure Lean. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
+**Soundness axioms** (A1, A2, A3, A6, A7) — KZG security rests on computational
+hardness; these cannot be proved in pure Lean. See
+[decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
 
 1. **(A1 — Eval soundness)** `verifyEval x y c π = true → ∃ p, commit p = c ∧ π = proveEval p x y`
 2. **(A2 — Eval completeness)** `proveEval p x y = some π ↔ eval p x = y`
@@ -192,6 +193,14 @@ cannot be proved in pure Lean. See [decisions/001-kzg-axioms.md](decisions/001-k
 3. **(A3 — Degree soundness)** `verifyDegree c d π = true → ∃ p, commit p = c ∧ deg p ≤ d ∧ π = proveDegree p d`
 6. **(A6 — Commitment binding)** `commit p = commit p̃ → p = p̃`
    ⚠ Technically false in pure math; true under the `d`-SDH assumption.
+7. **(A7 — Shard eval soundness)** See shard soundness axiom above.
+
+**Completeness axioms** (A1c, A3c, A7c) — algebraic correctness of honest provers;
+axiomatized because KZG functions are opaque (gap G12 resolved).
+
+- **(A1c — Eval completeness, verifier)** `proveEval p x (eval p x) = some π → verifyEval x (eval p x) (commit p) π = true`
+- **(A3c — Degree completeness)** `p.natDegree ≤ d → ∃ π, proveDegree p d = some π ∧ verifyDegree (commit p) d π = true`
+- **(A7c — Shard eval completeness)** `verifyShardEval (commit p) i (fun j => shardEval p i j) (proveShardEval p i) = true`
 
 **Provable lemmas** (A4, A5) — follow from polynomial arithmetic; provable from
 Mathlib, not axiomatized. See [decisions/001-kzg-axioms.md](decisions/001-kzg-axioms.md).
@@ -257,3 +266,23 @@ verifyDegree(c, d, π_deg) = 1
 `π_deg` to obtain the degree bound `p.natDegree ≤ d`. Apply A6 to collapse to a
 unique `p`. Apply S4 to conclude `interpolate(cosetPoints I, shardVals I vs) = p`.
 Lean status: `proved` (gap G10 resolved).
+
+### Property 4: End-to-end round-trip (G13)
+
+Given `b : Bytes`, distinct nodes `xs : Fin (d+1) → Fr`, commitment `c` to the
+interpolant of `serialize b` at `xs`, a degree proof `π_deg`, index set `I` with
+`|I| = k/l`, shard values and proofs:
+
+```
+commit(interpolate(xs, serialize b ∘ Fin.cast d_succ_eq_k)) = c
+∧ verifyDegree(c, d, π_deg) = 1
+∧ (∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = 1)
+⟹
+deserialize(fun i => eval(xs(Fin.cast d_succ_eq_k.symm i),
+                          interpolate(cosetPoints I, shardVals I vs))) = b
+```
+
+**Proof sketch**: P3 gives the unique recovered `p`. A6 identifies `p` with the
+interpolant of `serialize b`. A4 recovers the evaluations. Cast cancellation gives
+`serialize b`, and `deserialize_left_inverse` closes.
+Lean status: `proved` (gap G13 resolved).
