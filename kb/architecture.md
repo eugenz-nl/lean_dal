@@ -146,9 +146,9 @@ dal/
 - Asserts A1, A2, A3, A6 as `axiom`. Proves A4, A5 (or references `Poly.lean`).
 - **Key design choice**: KZG functions operate on `Poly`, not raw byte arrays. See
   [decisions/002-kzg-over-poly.md](decisions/002-kzg-over-poly.md).
-- **Planned (gap G8/G9)**: `shardRemainder`, `proveShardEval`, `verifyShardEval`
-  as `opaque` declarations, and `verifyShardEval_soundness` as axiom A7.
-  Approved 2026-03-25 (per Decision 001).
+- **Added (gaps G8/G9, resolved)**: `shardRemainder`, `proveShardEval`,
+  `verifyShardEval` as `axiom` declarations, and `verifyShardEval_soundness`
+  as axiom A7. Imports `Dal.Sharding` for `Fin s`, `Fin l`, `shardEval`.
 
 ### `Dal/Sharding.lean`
 - Defines `Ω : Fin s → Finset 𝔽_r` (the `s` cosets).
@@ -195,7 +195,8 @@ Poly ──────────────┬──────────
   │                │                            │
   ▼                ▼                            ▼
 ReedSolomon    Sharding    Serialization      KZG
-      │              │          │              │
+      │              │          │         ▲    │
+      │              └──────────┼─────────┘    │
       └──────────────┴──────────┴──────────────┘
                                                │
                                                ▼
@@ -204,6 +205,10 @@ ReedSolomon    Sharding    Serialization      KZG
                                                ▼
                                           Properties
 ```
+
+Note: `KZG` now imports `Sharding` (added for `shardRemainder`, `proveShardEval`,
+`verifyShardEval`, and `verifyShardEval_soundness` which reference `Fin s`, `Fin l`,
+and `shardEval`).
 
 ---
 

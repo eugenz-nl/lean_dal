@@ -1,32 +1,37 @@
 import Dal.Field
 import Dal.Poly
+import Dal.Sharding
 
 /-!
 # Dal.KZG
 
 KZG polynomial commitment scheme: opaque group types, commitment and proof
-functions, and the four security axioms A1–A3, A6.
+functions, and the five security axioms A1–A3, A6, A7.
 
 ## Contents
 
-- `G1`, `G2`, `GT`         — opaque BLS12-381 group types
-- `Commitment`, `Proof`    — type aliases for `G1`
-- `commit`                 — polynomial commitment function
-- `proveEval`              — evaluation proof function
-- `verifyEval`             — evaluation proof verifier
-- `proveDegree`            — degree proof function
-- `verifyDegree`           — degree proof verifier
-- `verifyEval_soundness`   — A1 (axiom)
-- `proveEval_complete`     — A2 (axiom)
-- `verifyDegree_soundness` — A3 (axiom)
-- `commit_binding`         — A6 (axiom)
+- `G1`, `G2`, `GT`                — opaque BLS12-381 group types
+- `Commitment`, `Proof`           — type aliases for `G1`
+- `commit`                        — polynomial commitment function
+- `proveEval`                     — evaluation proof function
+- `verifyEval`                    — evaluation proof verifier
+- `proveDegree`                   — degree proof function
+- `verifyDegree`                  — degree proof verifier
+- `shardRemainder`                — euclidean remainder of `p` by `Z_i`
+- `proveShardEval`                — multi-reveal shard proof function
+- `verifyShardEval`               — multi-reveal shard proof verifier
+- `verifyEval_soundness`          — A1 (axiom)
+- `proveEval_complete`            — A2 (axiom)
+- `verifyDegree_soundness`        — A3 (axiom)
+- `commit_binding`                — A6 (axiom)
+- `verifyShardEval_soundness`     — A7 (axiom)
 
 ## Design
 
 All group types and KZG functions are opaque (`axiom`): formalizing BLS12-381
 or the KZG computation would require a verified cryptography library that is
-out of scope. The four security axioms are the only things needed to prove P1
-and P2 at the protocol level. See `decisions/001-kzg-axioms.md`.
+out of scope. The five security axioms are the only things needed to prove P1,
+P2, and P3 at the protocol level. See `decisions/001-kzg-axioms.md`.
 
 Note: `spec.md` and `properties.md` both list A2 as an axiom (alongside A1, A3,
 A6). Decision 001 mentions only three axioms (A1, A3, A6), which is an oversight
@@ -35,7 +40,7 @@ A6). Decision 001 mentions only three axioms (A1, A3, A6), which is an oversight
 
 namespace Dal.KZG
 
-open Dal.Field Dal.Poly
+open Dal.Field Dal.Poly Dal.Sharding
 
 /-! ### Elliptic curve groups (opaque)
 
@@ -81,6 +86,26 @@ axiom proveDegree : Poly → ℕ → Option G1
 /-- Degree verifier: checks the degree bound proof. -/
 axiom verifyDegree : G1 → ℕ → G1 → Bool
 
+/-! ### Multi-reveal shard proof functions (opaque)
+
+These implement the efficient multi-reveal protocol: a single proof `π_i` certifies
+all `l` evaluations of `p` on coset `Ω_i`. See `spec.md §Sharding` and gaps G8–G9.
+-/
+
+/-- Shard remainder: the unique polynomial of degree `< l` such that
+    `p ≡ shardRemainder p i  (mod Z_i)`, i.e. the euclidean remainder of
+    division by the vanishing polynomial `Z i`. -/
+axiom shardRemainder : Poly → Fin s → Poly
+
+/-- Multi-reveal shard proof: `proveShardEval p i = [q_i(τ)]_1` where
+    `q_i = (p − shardRemainder p i) / Z_i`. -/
+axiom proveShardEval : Poly → Fin s → G1
+
+/-- Multi-reveal shard verifier: checks
+    `e(c − [r_i(τ)]_1, g_2) = e(π, [τ^l]_2 − [ω^{il}]_2)`
+    where `r_i` is reconstructed from the claimed evaluations `vs`. -/
+axiom verifyShardEval : G1 → Fin s → (Fin l → Fr) → G1 → Bool
+
 /-! ### Security axioms -/
 
 /-- **A1 — Eval soundness**: a valid evaluation proof implies the existence of a
@@ -106,5 +131,14 @@ axiom verifyDegree_soundness (c π : G1) (bound : ℕ) :
     violate under `d`-SDH. See `decisions/001-kzg-axioms.md`. -/
 axiom commit_binding (p q : Poly) :
     commit p = commit q → p = q
+
+/-- **A7 — Shard eval soundness**: a valid shard proof implies the existence of
+    a committed polynomial whose evaluations on `Ω_i` equal the claimed values.
+    Multi-reveal analogue of A1. Rests on the `d`-SDH assumption.
+    Approved 2026-03-25. See `decisions/001-kzg-axioms.md` and gap G9. -/
+axiom verifyShardEval_soundness (c : G1) (i : Fin s) (vs : Fin l → Fr) (π : G1) :
+    verifyShardEval c i vs π = true →
+    ∃ p : Poly, commit p = c ∧ proveShardEval p i = π ∧
+                ∀ j : Fin l, shardEval p i j = vs j
 
 end Dal.KZG
