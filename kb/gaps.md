@@ -234,15 +234,16 @@ formalization pass. No Lean code exists for any of them yet.
 
 ---
 
-## Planned: DAL-level security theorems
+## DAL-level security theorems
 
 ### G14: Security theorems Sec1–Sec7
 
 - **Scope**: `Dal/Protocol.lean` — a new block of theorems lifting the KZG
   axioms and the main theorems (P1, P2, P3, G13) to attacker-relevant
-  DAL-level guarantees. Exported from `Dal/Properties.lean`.
-- **Status**: `unstarted`
-- **Targets** (all in `Dal.Protocol`, re-exported from `Dal.Properties`):
+  DAL-level guarantees. Re-exported from `Dal/Properties.lean`.
+- **Status**: `resolved`
+- **Completed** (all proved in `Dal/Protocol.lean`, re-exported from
+  `Dal/Properties.lean`):
   - `slot_binding` (Sec1) — `b₁ = b₂` from equal slot-level commitments.
     Proof: A6 + A4 + cast cancellation + S1.
   - `decoder_determinism` (Sec2) — two verifying shard subsets under the
@@ -256,10 +257,10 @@ formalization pass. No Lean code exists for any of them yet.
   - `commitment_well_formed` (Sec6) — `verifyDegree` acceptance implies
     commitment is in the image of `commit`. Proof: weakening of A3.
   - `eval_proof_unique`, `degree_proof_unique`, `shard_proof_unique` (Sec7)
-    — three proof-non-malleability theorems. Proof: A1/A3/A7 + A6 + `Option`
-    determinism.
-- **Dependencies**: All of A1, A2, A3, A6, A7, A1c, A3c, A7c, P1, P2, P3,
-  S1, S4, G13, and `d_succ_eq_k`. No new axioms required.
+    — three proof-non-malleability theorems. Proof: A1/A3/A7 + A6 +
+    `Option.some.inj` (for eval/degree) / direct transitivity (shard).
+- **Dependencies used**: A1, A2, A3, A6, A7, A1c (indirectly via P2/G13),
+  A3c, A7c, P1, P2, P3, S1, S4, G13, and `d_succ_eq_k`. No new axioms added.
 - **Reference**: [properties.md § Security theorems](properties.md#security-theorems-dal-level-corollaries).
 
 ---

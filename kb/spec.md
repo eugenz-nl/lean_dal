@@ -289,11 +289,13 @@ Lean status: `proved` (gap G13 resolved).
 
 ### Security theorems (DAL-level corollaries)
 
-On top of the functional-correctness theorems above, the formalization tracks a
-set of **DAL-level security theorems** (Sec1–Sec7) that restate the cryptographic
-guarantees in attacker-relevant form at the `Bytes` / slot level. They introduce
-no new axioms and follow as corollaries of the KZG axioms (A1, A3, A6, A7), the
-structural lemmas (S1, S4), and the main theorems (P1, P2, P3, G13).
+On top of the functional-correctness theorems above, the formalization includes
+a set of **DAL-level security theorems** (Sec1–Sec7) that restate the
+cryptographic guarantees in attacker-relevant form at the `Bytes` / slot level.
+They introduce no new axioms and follow as corollaries of the KZG axioms
+(A1, A2, A3, A6, A7, A3c, A7c), the structural lemmas (S1, S4), and the main
+theorems (P1, P2, P3, G13). All seven are **proved** in `Dal/Protocol.lean`
+and re-exported from `Dal/Properties.lean`.
 
 | ID | Name | Informal statement |
 |----|------|--------------------|
@@ -307,4 +309,4 @@ structural lemmas (S1, S4), and the main theorems (P1, P2, P3, G13).
 
 Full statements, Lean targets, proof sketches, and threat-model notes are in
 [properties.md § Security theorems](properties.md#security-theorems-dal-level-corollaries).
-Open obligation tracked as [gaps.md § G14](gaps.md#g14-security-theorems-sec1sec7).
+Gap [G14](gaps.md#g14-security-theorems-sec1sec7) is resolved.

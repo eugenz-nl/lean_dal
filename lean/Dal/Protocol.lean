@@ -216,4 +216,229 @@ theorem round_trip
   rw [hfun]
   exact deserialize_left_inverse b
 
+/-! ### Security theorems (DAL-level corollaries)
+
+These lift the KZG axioms and main theorems to attacker-relevant guarantees at
+the `Bytes` / slot level.  None of them introduces a new cryptographic assumption;
+each follows from the existing axioms A1–A7 (plus A1c, A3c, A7c) and the main
+theorems P1, P2, P3, G13.
+-/
+
+/-- **Sec1 — Slot binding**: two slots whose interpolants commit to the same L1
+    value (at the same distinct evaluation nodes) are equal.
+
+    **Proof**: A6 gives equal interpolants.  A4 pushes the equality to the
+    serialized scalar sequences (pointwise).  Cast cancellation lifts it to
+    `serialize b₁ = serialize b₂`, and S1 closes. -/
+theorem slot_binding
+    (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (b₁ b₂ : Bytes)
+    (hcommit : commit (interpolate xs (serialize b₁ ∘ Fin.cast d_succ_eq_k))
+             = commit (interpolate xs (serialize b₂ ∘ Fin.cast d_succ_eq_k))) :
+    b₁ = b₂ := by
+  -- A6: equal interpolants
+  have hint_eq : interpolate xs (serialize b₁ ∘ Fin.cast d_succ_eq_k) =
+                 interpolate xs (serialize b₂ ∘ Fin.cast d_succ_eq_k) :=
+    commit_binding _ _ hcommit
+  -- A4: evaluations at every xs i agree
+  have heval : ∀ i : Fin (d + 1),
+      (serialize b₁ ∘ Fin.cast d_succ_eq_k) i =
+      (serialize b₂ ∘ Fin.cast d_succ_eq_k) i := by
+    intro i
+    have h1 := interpolate_eval xs (serialize b₁ ∘ Fin.cast d_succ_eq_k) hxs i
+    have h2 := interpolate_eval xs (serialize b₂ ∘ Fin.cast d_succ_eq_k) hxs i
+    rw [hint_eq] at h1
+    exact h1.symm.trans h2
+  -- Cast cancellation: lift to equality of `serialize b_i` on all of `Fin k`
+  have hser : serialize b₁ = serialize b₂ := by
+    funext j
+    have hcast : Fin.cast d_succ_eq_k (Fin.cast d_succ_eq_k.symm j) = j := by
+      apply Fin.ext; rfl
+    have hj := heval (Fin.cast d_succ_eq_k.symm j)
+    simp only [Function.comp_apply, hcast] at hj
+    exact hj
+  -- S1
+  exact serialize_injective hser
+
+/-- **Sec2 — Decoder determinism**: two distinct verifying shard subsets under
+    the same commitment produce equal interpolants — an adversary cannot split
+    the reconstruction outcome across honest verifiers.
+
+    **Proof**: P3 applied to `I` gives a unique `p` with `commit p = c` and the
+    interpolant identity.  P3 applied to `I'` gives `p'`.  A6 collapses
+    `p = p'`; chain the two interpolant identities. -/
+theorem decoder_determinism
+    (c π_deg : G1)
+    (I : Finset (Fin s)) (hI : I.card = k / l)
+    (I' : Finset (Fin s)) (hI' : I'.card = k / l)
+    (vs : Fin s → Fin l → Fr) (πs : Fin s → G1)
+    (vs' : Fin s → Fin l → Fr) (πs' : Fin s → G1)
+    (hdeg : verifyDegree c d π_deg = true)
+    (hverify : ∀ i ∈ I, verifyShardEval c i (vs i) (πs i) = true)
+    (hverify' : ∀ i ∈ I', verifyShardEval c i (vs' i) (πs' i) = true) :
+    interpolate (cosetPoints I hI) (shardVals I hI vs) =
+    interpolate (cosetPoints I' hI') (shardVals I' hI' vs') := by
+  obtain ⟨p, ⟨hpc, _, _, hint⟩, _⟩ :=
+    shard_verification_recovery I hI c π_deg vs πs hdeg hverify
+  obtain ⟨p', ⟨hp'c, _, _, hint'⟩, _⟩ :=
+    shard_verification_recovery I' hI' c π_deg vs' πs' hdeg hverify'
+  have hpp' : p = p' := commit_binding p p' (hpc.trans hp'c.symm)
+  exact hint.trans (hpp'.trans hint'.symm)
+
+/-- **Sec3 — Shard unforgeability (slot level)**: a verifying shard proof/values
+    pair against a known slot's commitment matches the slot's true coset
+    evaluations and proof.
+
+    **Proof**: A7 extracts a witness `p` with `commit p = c`; A6 identifies
+    `p` with the slot's interpolant; substitute. -/
+theorem shard_values_unforgeable
+    (b : Bytes) (xs : Fin (d + 1) → Fr)
+    (i : Fin s) (vs : Fin l → Fr) (π : G1)
+    (hverify : verifyShardEval
+                 (commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)))
+                 i vs π = true) :
+    (∀ j, vs j =
+      shardEval (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) i j) ∧
+    π = proveShardEval (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) i := by
+  obtain ⟨p, hpc, hpprove, hpeval⟩ :=
+    verifyShardEval_soundness _ i vs π hverify
+  have hp_eq : p = interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k) :=
+    commit_binding _ _ hpc
+  rw [hp_eq] at hpeval hpprove
+  exact ⟨fun j => (hpeval j).symm, hpprove.symm⟩
+
+/-- **Sec4 — Threshold robustness / DA liveness**: given honest shard values
+    (and proofs) at any `k/l`-subset `I` of cosets, reconstruction recovers the
+    original slot `b`.
+
+    The "honest" assumption is expressed by feeding `round_trip` with
+    `vs i j := shardEval p_b i j` and `πs i := proveShardEval p_b i`, where
+    `p_b` is the slot interpolant.  Adversarial framing: if ≥ `k/l` shards are
+    held honestly (out of `s`), pick any `k/l`-subset `I` among them to invoke
+    this theorem; the adversary's withheld/corrupted shards (< `s − k/l`) cannot
+    prevent reconstruction.
+
+    **Proof**: A4 gives `p_b.natDegree ≤ d`, and A3c yields a verifying degree
+    proof.  A7c makes every honest shard proof verify.  G13 closes. -/
+theorem threshold_robustness
+    (b : Bytes)
+    (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (I : Finset (Fin s)) (hI : I.card = k / l) :
+    deserialize (fun i : Fin k =>
+        Polynomial.eval (xs (Fin.cast d_succ_eq_k.symm i))
+          (interpolate (cosetPoints I hI)
+            (shardVals I hI
+              (fun i' j =>
+                shardEval (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) i' j)))) = b := by
+  set p_b := interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)
+  -- A4 (degree) + A3c: honest degree proof exists and verifies
+  have hp_deg : p_b.natDegree ≤ d := interpolate_natDegree xs _ hxs
+  obtain ⟨π_deg, _, hdeg_verify⟩ := proveDegree_complete p_b d hp_deg
+  -- A7c: honest shard proofs verify
+  have hverify : ∀ i ∈ I,
+      verifyShardEval (commit p_b) i
+        (fun j => shardEval p_b i j) (proveShardEval p_b i) = true :=
+    fun i _ => verifyShardEval_complete p_b i
+  -- G13 closes the goal
+  exact round_trip b xs hxs (commit p_b) π_deg I hI
+    (fun i j => shardEval p_b i j)
+    (fun i => proveShardEval p_b i)
+    rfl hdeg_verify hverify
+
+/-- **Sec5 — Page-eval soundness (slot level)**: verifying evaluation proofs at
+    nodes `xs` against a slot's commitment force the alleged values to equal
+    the slot's scalar sequence.  A verifier cannot be convinced of incorrect
+    scalar values at the committed evaluation points.
+
+    **Proof**: P2 yields the unique `p` with `commit p = commit(slot interp)`.
+    A6 identifies `p` with the slot interpolant.  A2 gives `eval p (xs i) = ys i`;
+    A4 gives `eval (slot interp) (xs i) = (serialize b ∘ cast) i`.  Chain. -/
+theorem page_values_sound
+    (b : Bytes)
+    (xs : Fin (d + 1) → Fr) (hxs : Function.Injective xs)
+    (ys : Fin (d + 1) → Fr) (πs : Fin (d + 1) → G1)
+    (hverify : ∀ i,
+        verifyEval (xs i) (ys i)
+          (commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)))
+          (πs i) = true) :
+    ∀ i, ys i = (serialize b ∘ Fin.cast d_succ_eq_k) i := by
+  obtain ⟨p, ⟨hpc, hpprove⟩, _⟩ :=
+    page_verification_unique
+      (commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k))) xs ys πs hverify
+  have hp_eq : p = interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k) :=
+    commit_binding _ _ hpc
+  intro i
+  have hys : Polynomial.eval (xs i) p = ys i :=
+    (proveEval_complete p (xs i) (ys i)).mp ⟨πs i, hpprove i⟩
+  rw [hp_eq] at hys
+  have hser := interpolate_eval xs (serialize b ∘ Fin.cast d_succ_eq_k) hxs i
+  exact hys.symm.trans hser
+
+/-- **Sec6 — No fake commitments**: any commitment that passes the degree check
+    lies in the image of `commit` (with a bounded-degree preimage).
+    Rules out arbitrary group elements posing as commitments on L1.
+
+    **Proof**: Weakening of A3 (drop the `proveDegree` conjunct). -/
+theorem commitment_well_formed
+    (c π : G1) (hverify : verifyDegree c d π = true) :
+    ∃ p : Poly, commit p = c ∧ p.natDegree ≤ d := by
+  obtain ⟨p, hpc, hpdeg, _⟩ := verifyDegree_soundness c π d hverify
+  exact ⟨p, hpc, hpdeg⟩
+
+/-! #### Sec7: Proof non-malleability
+
+Three variants: the verifying proof for each KZG statement (evaluation, degree,
+shard-eval) is unique given `(commitment, query)`.  Relevant to protocols that
+identify proofs by their bit-level content (e.g. hash-as-transcript-input).
+-/
+
+/-- **Sec7 (evaluation)**: the verifying evaluation proof for `(x, y, c)` is
+    unique.
+
+    **Proof**: A1 twice gives `p, p'` with `commit p = c = commit p'` and
+    `proveEval p x y = some π`, `proveEval p' x y = some π'`.  A6 → `p = p'`,
+    so `some π = some π'`, hence `π = π'` by constructor injectivity. -/
+theorem eval_proof_unique
+    (x y : Fr) (c π π' : G1)
+    (hverify : verifyEval x y c π = true)
+    (hverify' : verifyEval x y c π' = true) :
+    π = π' := by
+  obtain ⟨p, hpc, hpprove⟩ := verifyEval_soundness x y c π hverify
+  obtain ⟨p', hp'c, hp'prove⟩ := verifyEval_soundness x y c π' hverify'
+  have hp_eq : p = p' := commit_binding p p' (hpc.trans hp'c.symm)
+  rw [hp_eq] at hpprove
+  exact Option.some.inj (hpprove.symm.trans hp'prove)
+
+/-- **Sec7 (degree)**: the verifying degree-bound proof for `(c, bound)` is
+    unique.  Stated parametrically in `bound`; specializing to `bound = d`
+    recovers the DAL statement.
+
+    **Proof**: A3 twice + A6 + constructor injectivity on `Option`. -/
+theorem degree_proof_unique
+    (c : G1) (bound : ℕ) (π π' : G1)
+    (hverify : verifyDegree c bound π = true)
+    (hverify' : verifyDegree c bound π' = true) :
+    π = π' := by
+  obtain ⟨p, hpc, _, hpprove⟩ := verifyDegree_soundness c π bound hverify
+  obtain ⟨p', hp'c, _, hp'prove⟩ := verifyDegree_soundness c π' bound hverify'
+  have hp_eq : p = p' := commit_binding p p' (hpc.trans hp'c.symm)
+  rw [hp_eq] at hpprove
+  exact Option.some.inj (hpprove.symm.trans hp'prove)
+
+/-- **Sec7 (shard)**: the verifying multi-reveal proof for `(c, i, vs)` is
+    unique.
+
+    **Proof**: A7 twice + A6.  `proveShardEval` returns `G1` directly (not
+    `Option`), so no constructor injectivity is needed. -/
+theorem shard_proof_unique
+    (c : G1) (i : Fin s) (vs : Fin l → Fr) (π π' : G1)
+    (hverify : verifyShardEval c i vs π = true)
+    (hverify' : verifyShardEval c i vs π' = true) :
+    π = π' := by
+  obtain ⟨p, hpc, hpprove, _⟩ := verifyShardEval_soundness c i vs π hverify
+  obtain ⟨p', hp'c, hp'prove, _⟩ := verifyShardEval_soundness c i vs π' hverify'
+  have hp_eq : p = p' := commit_binding p p' (hpc.trans hp'c.symm)
+  rw [hp_eq] at hpprove
+  exact hpprove.symm.trans hp'prove
+
 end Dal.Protocol

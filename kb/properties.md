@@ -4,6 +4,9 @@ last-updated: 2026-04-24
 status: draft
 ---
 
+<!-- 2026-04-24: Sec1–Sec7 moved from `not started` to `proved`. -->
+
+
 # Properties and Invariants
 
 This is the correctness checklist for the formalization. Every Lean change must
@@ -298,8 +301,15 @@ G13). None of them introduces a new cryptographic assumption — they lift the
 existing primitive-level guarantees to the interface an integrator or auditor
 reasons about.
 
+All seven are proved in `Dal/Protocol.lean` and re-exported from
+`Dal/Properties.lean` as `sec1_slot_binding`, `sec2_decoder_determinism`,
+`sec3_shard_values_unforgeable`, `sec4_threshold_robustness`,
+`sec5_page_values_sound`, `sec6_commitment_well_formed`,
+`sec7_eval_proof_unique`, `sec7_degree_proof_unique`,
+`sec7_shard_proof_unique`.
+
 See [spec.md](spec.md) for the primitive-level statements; [gaps.md](gaps.md)
-for tracking (entry G14).
+for tracking (entry G14 — resolved).
 
 ### Sec1: Slot binding
 
@@ -314,7 +324,7 @@ commit (interpolate xs (serialize b₁ ∘ Fin.cast d_succ_eq_k))
 ```
 
 - **Lean target**: `Dal.Protocol.slot_binding`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: A6 on the two commitments gives equal interpolants. A4
   (evaluation correctness) applied at every `xs i` gives
   `serialize b₁ ∘ cast = serialize b₂ ∘ cast` pointwise. Cast cancellation
@@ -340,7 +350,7 @@ verifyDegree c d π_deg = true
 ```
 
 - **Lean target**: `Dal.Protocol.decoder_determinism`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: Apply P3 to `(I, vs, πs)` → unique `p` with `commit p = c`
   and interpolant identity. Apply P3 to `(I', vs', πs')` → unique `p'` with
   `commit p' = c` and its interpolant identity. A6 → `p = p'`. Chain the two
@@ -363,7 +373,7 @@ verifyShardEval c i vs π = true
 ```
 
 - **Lean target**: `Dal.Protocol.shard_values_unforgeable`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: A7 gives `∃ p, commit p = c ∧ proveShardEval p i = π ∧
   ∀ j, shardEval p i j = vs j`. A6 on `commit p = c = commit p_b` gives
   `p = p_b`. Substitute.
@@ -386,7 +396,7 @@ deserialize (fun i => eval (xs (Fin.cast d_succ_eq_k.symm i))
 ```
 
 - **Lean target**: `Dal.Protocol.threshold_robustness`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: Honest shard values and proofs pass `verifyShardEval` by
   A7c. An honest degree proof exists by A3c. Apply G13 (`round_trip`) to `I`.
 - **Threat model**: Data-availability liveness — an adversary controlling
@@ -407,7 +417,7 @@ alleged evaluations `ys : Fin (d+1) → Fr`, and proofs `πs : Fin (d+1) → G1`
 ```
 
 - **Lean target**: `Dal.Protocol.page_values_sound`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: P2 gives a unique `p` with `commit p = c` and
   `proveEval p (xs i) (ys i) = some (πs i)` for all `i`. A2 applied to each `i`
   gives `eval p (xs i) = ys i`. A6 on the two commitments to `c` gives
@@ -427,7 +437,7 @@ verifyDegree c d π = true → ∃ p, commit p = c ∧ p.natDegree ≤ d
 ```
 
 - **Lean target**: `Dal.Protocol.commitment_well_formed`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch**: Weakening of A3 (drop the `proveDegree p d = some π`
   conjunct).
 - **Threat model**: Rules out arbitrary group elements posing as DAL
@@ -449,7 +459,7 @@ verifyShardEval c i vs π = true → verifyShardEval c i vs π' = true → π = 
 - **Lean targets**: `Dal.Protocol.eval_proof_unique`,
   `Dal.Protocol.degree_proof_unique`,
   `Dal.Protocol.shard_proof_unique`
-- **Status**: `not started`
+- **Status**: `proved`
 - **Proof sketch (eval)**: A1 on both hypotheses gives `p, p'` with
   `commit p = commit p' = c`, `proveEval p x y = some π`,
   `proveEval p' x y = some π'`. A6 → `p = p'`. Therefore
@@ -470,7 +480,6 @@ When modifying any Lean file, verify:
 - [ ] A1–A7 and A1c, A3c, A7c are still present as `axiom` declarations
 - [ ] P1, P2, and P3 still type-check (even if `sorry`-bodied)
 - [ ] S1–S4 still type-check
-- [ ] Sec1–Sec7 statements, once formalized, remain provable from the
-      unchanged axioms (no regression of security theorems)
+- [ ] Sec1–Sec7 still type-check (no regression of security theorems)
 - [ ] No existing proved theorem has been weakened (statement made strictly weaker)
 - [ ] `lake build` passes
