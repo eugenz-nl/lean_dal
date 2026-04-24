@@ -1,6 +1,6 @@
 ---
 title: Properties and Invariants
-last-updated: 2026-03-24
+last-updated: 2026-04-24
 status: draft
 ---
 
@@ -288,6 +288,181 @@ commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)) = c
 
 ---
 
+## Security theorems (DAL-level corollaries)
+
+These restate the cryptographic guarantees of KZG and Reed-Solomon at the DAL
+interface level (`Bytes`, slot-as-a-whole), giving attacker-relevant soundness
+and binding statements. They are corollaries of the KZG axioms (A1, A3, A6, A7)
+together with the structural lemmas (S1, S4) and the main theorems (P1, P2, P3,
+G13). None of them introduces a new cryptographic assumption — they lift the
+existing primitive-level guarantees to the interface an integrator or auditor
+reasons about.
+
+See [spec.md](spec.md) for the primitive-level statements; [gaps.md](gaps.md)
+for tracking (entry G14).
+
+### Sec1: Slot binding
+
+Two slots whose interpolants commit to the same KZG value are equal.
+
+**Statement**: For `xs : Fin (d+1) → Fr` with `Function.Injective xs` and
+`b₁ b₂ : Bytes`:
+```
+commit (interpolate xs (serialize b₁ ∘ Fin.cast d_succ_eq_k))
+  = commit (interpolate xs (serialize b₂ ∘ Fin.cast d_succ_eq_k))
+→ b₁ = b₂
+```
+
+- **Lean target**: `Dal.Protocol.slot_binding`
+- **Status**: `not started`
+- **Proof sketch**: A6 on the two commitments gives equal interpolants. A4
+  (evaluation correctness) applied at every `xs i` gives
+  `serialize b₁ ∘ cast = serialize b₂ ∘ cast` pointwise. Cast cancellation
+  (right-inverse of `Fin.cast`) gives `serialize b₁ = serialize b₂`. S1 closes.
+- **Threat model**: Rules out any adversary producing two distinct slots that
+  commit to the same L1 value. The commitment posted on L1 unambiguously
+  identifies the slot.
+
+### Sec2: Decoder determinism under adversarial shard sets
+
+Two distinct verifying shard subsets under the same commitment reconstruct the
+same polynomial — no adversarial "shard split" attack.
+
+**Statement**: For commitment `c`, degree proof `π_deg`, two index sets
+`I, I' : Finset (Fin s)` with `hI : |I| = k/l`, `hI' : |I'| = k/l`, shard
+values `vs, vs'`, and shard proofs `πs, πs'`:
+```
+verifyDegree c d π_deg = true
+→ (∀ i ∈ I,  verifyShardEval c i (vs  i) (πs  i) = true)
+→ (∀ i ∈ I', verifyShardEval c i (vs' i) (πs' i) = true)
+→ interpolate (cosetPoints I  hI)  (shardVals I  hI  vs)
+  = interpolate (cosetPoints I' hI') (shardVals I' hI' vs')
+```
+
+- **Lean target**: `Dal.Protocol.decoder_determinism`
+- **Status**: `not started`
+- **Proof sketch**: Apply P3 to `(I, vs, πs)` → unique `p` with `commit p = c`
+  and interpolant identity. Apply P3 to `(I', vs', πs')` → unique `p'` with
+  `commit p' = c` and its interpolant identity. A6 → `p = p'`. Chain the two
+  interpolant identities.
+- **Threat model**: Rules out an adversary who serves different-looking but
+  all-verifying shard sets to different honest verifiers, causing them to
+  recover inconsistent slots.
+
+### Sec3: Shard unforgeability (slot level)
+
+Any shard values that verify against a commitment to a known slot are the true
+shard evaluations of that slot; the accompanying proof is also unique.
+
+**Statement**: For `b : Bytes`, distinct `xs : Fin (d+1) → Fr`, letting
+`p_b := interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)` and
+`c := commit p_b`:
+```
+verifyShardEval c i vs π = true
+→ (∀ j, vs j = shardEval p_b i j) ∧ π = proveShardEval p_b i
+```
+
+- **Lean target**: `Dal.Protocol.shard_values_unforgeable`
+- **Status**: `not started`
+- **Proof sketch**: A7 gives `∃ p, commit p = c ∧ proveShardEval p i = π ∧
+  ∀ j, shardEval p i j = vs j`. A6 on `commit p = c = commit p_b` gives
+  `p = p_b`. Substitute.
+- **Threat model**: Rules out fabricated shard data that still passes
+  `verifyShardEval` against a genuine slot commitment.
+
+### Sec4: Threshold robustness (MDS security / DA liveness)
+
+If at least `k/l` honest shards are available, honest parties reconstruct the
+committed slot — regardless of the remaining `s − k/l` shards.
+
+**Statement**: For `b : Bytes`, distinct `xs : Fin (d+1) → Fr`, with
+`p_b := interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k)` and `c := commit p_b`,
+honest shard values `vs i j := shardEval p_b i j` and proofs
+`πs i := proveShardEval p_b i` for `i ∈ H` where `H : Finset (Fin s)` with
+`|H| ≥ k/l`: for every `I ⊆ H` with `hI : |I| = k/l`,
+```
+deserialize (fun i => eval (xs (Fin.cast d_succ_eq_k.symm i))
+                          (interpolate (cosetPoints I hI) (shardVals I hI vs))) = b
+```
+
+- **Lean target**: `Dal.Protocol.threshold_robustness`
+- **Status**: `not started`
+- **Proof sketch**: Honest shard values and proofs pass `verifyShardEval` by
+  A7c. An honest degree proof exists by A3c. Apply G13 (`round_trip`) to `I`.
+- **Threat model**: Data-availability liveness — an adversary controlling
+  strictly fewer than `s − k/l` shards cannot prevent reconstruction.
+
+### Sec5: Evaluation proof soundness (slot level)
+
+Evaluation proofs cannot convince a verifier of incorrect scalar values at the
+slot's evaluation points.
+
+**Statement**: For `b : Bytes`, distinct `xs : Fin (d+1) → Fr` with
+`hxs : Function.Injective xs`,
+`c := commit (interpolate xs (serialize b ∘ Fin.cast d_succ_eq_k))`,
+alleged evaluations `ys : Fin (d+1) → Fr`, and proofs `πs : Fin (d+1) → G1`:
+```
+(∀ i, verifyEval (xs i) (ys i) c (πs i) = true)
+→ ∀ i, ys i = (serialize b ∘ Fin.cast d_succ_eq_k) i
+```
+
+- **Lean target**: `Dal.Protocol.page_values_sound`
+- **Status**: `not started`
+- **Proof sketch**: P2 gives a unique `p` with `commit p = c` and
+  `proveEval p (xs i) (ys i) = some (πs i)` for all `i`. A2 applied to each `i`
+  gives `eval p (xs i) = ys i`. A6 on the two commitments to `c` gives
+  `p = interpolate xs (serialize b ∘ cast)`. A4 then evaluates this interpolant
+  at `xs i` to `(serialize b ∘ cast) i`, so `ys i = (serialize b ∘ cast) i`.
+- **Threat model**: A light-client page verifier cannot be tricked into
+  believing incorrect scalar values at the page's evaluation points.
+
+### Sec6: No fake commitments
+
+Any commitment that passes the degree check comes from a bounded-degree
+polynomial.
+
+**Statement**:
+```
+verifyDegree c d π = true → ∃ p, commit p = c ∧ p.natDegree ≤ d
+```
+
+- **Lean target**: `Dal.Protocol.commitment_well_formed`
+- **Status**: `not started`
+- **Proof sketch**: Weakening of A3 (drop the `proveDegree p d = some π`
+  conjunct).
+- **Threat model**: Rules out arbitrary group elements posing as DAL
+  commitments on L1. Restates A3 in the security section so that the
+  "no fake commitments" guarantee is visible at this layer.
+
+### Sec7: Proof non-malleability
+
+Given a commitment and a query, the verifying proof is unique — an adversary
+cannot produce two distinct verifying proofs for the same statement.
+
+**Statement** (three variants):
+```
+verifyEval x y c π = true → verifyEval x y c π' = true → π = π'           (eval)
+verifyDegree c d π = true → verifyDegree c d π' = true → π = π'           (degree)
+verifyShardEval c i vs π = true → verifyShardEval c i vs π' = true → π = π'   (shard)
+```
+
+- **Lean targets**: `Dal.Protocol.eval_proof_unique`,
+  `Dal.Protocol.degree_proof_unique`,
+  `Dal.Protocol.shard_proof_unique`
+- **Status**: `not started`
+- **Proof sketch (eval)**: A1 on both hypotheses gives `p, p'` with
+  `commit p = commit p' = c`, `proveEval p x y = some π`,
+  `proveEval p' x y = some π'`. A6 → `p = p'`. Therefore
+  `some π = some π'`, hence `π = π'`. Degree and shard cases analogous via
+  A3 and A7 respectively.
+- **Threat model**: Prevents malleability attacks in protocols that identify
+  proofs by their bit-level contents (e.g., hashing proofs as transcript
+  inputs). Under KZG, evaluation/degree/shard proofs are deterministic given
+  the polynomial and query; the binding axiom (A6) pins down the polynomial,
+  and the `proveX` function pins down the proof bits.
+
+---
+
 ## Invariant preservation checklist
 
 When modifying any Lean file, verify:
@@ -295,5 +470,7 @@ When modifying any Lean file, verify:
 - [ ] A1–A7 and A1c, A3c, A7c are still present as `axiom` declarations
 - [ ] P1, P2, and P3 still type-check (even if `sorry`-bodied)
 - [ ] S1–S4 still type-check
+- [ ] Sec1–Sec7 statements, once formalized, remain provable from the
+      unchanged axioms (no regression of security theorems)
 - [ ] No existing proved theorem has been weakened (statement made strictly weaker)
 - [ ] `lake build` passes

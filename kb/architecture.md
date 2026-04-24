@@ -1,6 +1,6 @@
 ---
 title: Formalization Architecture
-last-updated: 2026-03-25
+last-updated: 2026-04-24
 status: draft
 ---
 
@@ -195,6 +195,13 @@ lean/
 - Proves `round_trip` (G13): if `c` commits to the interpolant of `serialize b`
   and shard proofs verify, then deserializing the recovered polynomial's evaluations
   gives back `b`. Uses `d_succ_eq_k` to bridge `Fin (d+1)` and `Fin k`.
+- **Planned (gap G14)**: DAL-level security theorems Sec1–Sec7:
+  `slot_binding`, `decoder_determinism`, `shard_values_unforgeable`,
+  `threshold_robustness`, `page_values_sound`, `commitment_well_formed`,
+  and the three proof-non-malleability theorems (`eval_proof_unique`,
+  `degree_proof_unique`, `shard_proof_unique`). All are corollaries of the
+  existing axioms and main theorems; no new axioms required. See
+  [properties.md § Security theorems](properties.md#security-theorems-dal-level-corollaries).
 - This module imports all other modules.
 
 ### `Dal/Properties.lean`
@@ -202,6 +209,12 @@ lean/
   and completeness axioms A1c, A3c, A7c (eleven entries total).
   Importing this file gives the full correctness guarantee.
 - All entries are either proved or declared as `axiom` without `sorry`.
+- **Planned (gap G14)**: re-export the DAL-level security theorems
+  Sec1–Sec7 as `sec1_slot_binding`, `sec2_decoder_determinism`,
+  `sec3_shard_values_unforgeable`, `sec4_threshold_robustness`,
+  `sec5_page_values_sound`, `sec6_commitment_well_formed`,
+  `sec7_eval_proof_unique`, `sec7_degree_proof_unique`,
+  `sec7_shard_proof_unique`.
 
 ---
 

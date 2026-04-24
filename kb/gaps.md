@@ -1,6 +1,6 @@
 ---
 title: Open Proof Obligations and Gaps
-last-updated: 2026-03-25
+last-updated: 2026-04-24
 status: draft
 ---
 
@@ -231,6 +231,36 @@ formalization pass. No Lean code exists for any of them yet.
     evaluations; cast composition gives `serialize b`; `deserialize_left_inverse` closes.
   - `Dal/Properties.lean`: `g13_round_trip` re-exports the theorem.
   Zero sorry. Build clean.
+
+---
+
+## Planned: DAL-level security theorems
+
+### G14: Security theorems Sec1–Sec7
+
+- **Scope**: `Dal/Protocol.lean` — a new block of theorems lifting the KZG
+  axioms and the main theorems (P1, P2, P3, G13) to attacker-relevant
+  DAL-level guarantees. Exported from `Dal/Properties.lean`.
+- **Status**: `unstarted`
+- **Targets** (all in `Dal.Protocol`, re-exported from `Dal.Properties`):
+  - `slot_binding` (Sec1) — `b₁ = b₂` from equal slot-level commitments.
+    Proof: A6 + A4 + cast cancellation + S1.
+  - `decoder_determinism` (Sec2) — two verifying shard subsets under the
+    same commitment produce equal interpolants. Proof: P3 twice + A6.
+  - `shard_values_unforgeable` (Sec3) — `verifyShardEval` acceptance pins
+    shard values and proof to the known-slot expectation. Proof: A7 + A6.
+  - `threshold_robustness` (Sec4) — honest shard set of size ≥ k/l suffices
+    to reconstruct, for any k/l-subset. Proof: A7c + A3c + G13.
+  - `page_values_sound` (Sec5) — `verifyEval` acceptance at all `xs` forces
+    `ys` to equal `serialize b ∘ cast`. Proof: P2 + A2 + A6 + A4.
+  - `commitment_well_formed` (Sec6) — `verifyDegree` acceptance implies
+    commitment is in the image of `commit`. Proof: weakening of A3.
+  - `eval_proof_unique`, `degree_proof_unique`, `shard_proof_unique` (Sec7)
+    — three proof-non-malleability theorems. Proof: A1/A3/A7 + A6 + `Option`
+    determinism.
+- **Dependencies**: All of A1, A2, A3, A6, A7, A1c, A3c, A7c, P1, P2, P3,
+  S1, S4, G13, and `d_succ_eq_k`. No new axioms required.
+- **Reference**: [properties.md § Security theorems](properties.md#security-theorems-dal-level-corollaries).
 
 ---
 

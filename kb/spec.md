@@ -1,6 +1,6 @@
 ---
 title: Protocol Specification
-last-updated: 2026-03-24
+last-updated: 2026-04-24
 status: draft
 ---
 
@@ -286,3 +286,25 @@ deserialize(fun i => eval(xs(Fin.cast d_succ_eq_k.symm i),
 interpolant of `serialize b`. A4 recovers the evaluations. Cast cancellation gives
 `serialize b`, and `deserialize_left_inverse` closes.
 Lean status: `proved` (gap G13 resolved).
+
+### Security theorems (DAL-level corollaries)
+
+On top of the functional-correctness theorems above, the formalization tracks a
+set of **DAL-level security theorems** (Sec1–Sec7) that restate the cryptographic
+guarantees in attacker-relevant form at the `Bytes` / slot level. They introduce
+no new axioms and follow as corollaries of the KZG axioms (A1, A3, A6, A7), the
+structural lemmas (S1, S4), and the main theorems (P1, P2, P3, G13).
+
+| ID | Name | Informal statement |
+|----|------|--------------------|
+| Sec1 | Slot binding | Equal slot-level commitments imply equal slots |
+| Sec2 | Decoder determinism | Different verifying shard subsets recover the same interpolant |
+| Sec3 | Shard unforgeability | Verifying shard values/proofs for a known slot are the true ones |
+| Sec4 | Threshold robustness | k/l honest shards suffice for reconstruction (DA liveness) |
+| Sec5 | Page-eval soundness | Verifying evaluation proofs force `ys` to be the true byte values |
+| Sec6 | No fake commitments | `verifyDegree` acceptance implies the commitment is real |
+| Sec7 | Proof non-malleability | Evaluation / degree / shard proofs are unique given `(c, query)` |
+
+Full statements, Lean targets, proof sketches, and threat-model notes are in
+[properties.md § Security theorems](properties.md#security-theorems-dal-level-corollaries).
+Open obligation tracked as [gaps.md § G14](gaps.md#g14-security-theorems-sec1sec7).
